@@ -742,7 +742,7 @@ void OsrWindowWin::OnMouseEvent(UINT message, WPARAM wParam, LPARAM lParam) {
         }
 
         ScreenToClient(hwnd_, &screen_point);
-        int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+        //int delta = GET_WHEEL_DELTA_WPARAM(wParam);
 
         CefMouseEvent mouse_event;
         mouse_event.x = screen_point.x;
@@ -750,9 +750,29 @@ void OsrWindowWin::OnMouseEvent(UINT message, WPARAM wParam, LPARAM lParam) {
         ApplyPopupOffset(mouse_event.x, mouse_event.y);
         DeviceToLogical(mouse_event, device_scale_factor_);
         mouse_event.modifiers = GetCefMouseModifiers(wParam);
-        browser_host->SendMouseWheelEvent(mouse_event,
-                                          IsKeyDown(VK_SHIFT) ? delta : 0,
-                                          !IsKeyDown(VK_SHIFT) ? delta : 0);
+
+        struct CHROME_POINT {
+          LONG x;
+          LONG y;
+        };
+
+		struct CHROME_MSG {
+          HWND hwnd;
+          UINT message;
+          WPARAM wParam;
+          LPARAM lParam;
+          DWORD time;
+          CHROME_POINT pt;
+        };
+
+        CHROME_MSG platform_event = {
+			hwnd_, message, wParam,
+			MAKELPARAM(mouse_event.x, mouse_event.y),
+			(DWORD) currentTime
+		};
+
+        browser_host->SendMouseWheelEvent(
+            (CefPlatformMouseEvent)&platform_event);
       }
       break;
   }

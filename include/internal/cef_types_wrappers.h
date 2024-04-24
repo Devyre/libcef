@@ -334,6 +334,7 @@ class CefMouseEvent : public cef_mouse_event_t {
   CefMouseEvent() : cef_mouse_event_t{} {}
   CefMouseEvent(const cef_mouse_event_t& r) : cef_mouse_event_t(r) {}
 };
+using CefPlatformMouseEvent = cef_platform_mouse_event_t;
 
 ///
 /// Class representing a touch event.

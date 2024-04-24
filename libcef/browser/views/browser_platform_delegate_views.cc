@@ -140,6 +140,11 @@ void CefBrowserPlatformDelegateViews::SendMouseWheelEvent(
   native_delegate_->SendMouseWheelEvent(event, deltaX, deltaY);
 }
 
+void CefBrowserPlatformDelegateViews::SendMouseWheelEvent(
+    const CefPlatformMouseEvent& event) {
+  native_delegate_->SendMouseWheelEvent(event);
+}
+
 void CefBrowserPlatformDelegateViews::SendTouchEvent(
     const CefTouchEvent& event) {
   native_delegate_->SendTouchEvent(event);

@@ -870,14 +870,33 @@ void CefBrowserHostBase::SendMouseWheelEvent(const CefMouseEvent& event,
   }
 
   if (!CEF_CURRENTLY_ON_UIT()) {
+    using TSendMouseWheelEvent = void(CefBrowserHostBase::*)(const CefMouseEvent&, int, int);
     CEF_POST_TASK(CEF_UIT,
-                  base::BindOnce(&CefBrowserHostBase::SendMouseWheelEvent, this,
+        base::BindOnce((TSendMouseWheelEvent)&CefBrowserHostBase::SendMouseWheelEvent,
+                                 this,
                                  event, deltaX, deltaY));
     return;
   }
 
   if (platform_delegate_) {
     platform_delegate_->SendMouseWheelEvent(event, deltaX, deltaY);
+  }
+}
+
+void CefBrowserHostBase::SendMouseWheelEvent(const CefPlatformMouseEvent& event) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    using TSendMouseWheelEvent =
+        void (CefBrowserHostBase::*)(const CefPlatformMouseEvent&);
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce(
+            (TSendMouseWheelEvent)&CefBrowserHostBase::SendMouseWheelEvent,
+            this, event));
+    return;
+  }
+
+  if (platform_delegate_) {
+    platform_delegate_->SendMouseWheelEvent(event);
   }
 }
 

@@ -1970,6 +1970,11 @@ typedef struct _cef_mouse_event_t {
 } cef_mouse_event_t;
 
 ///
+/// Structure representing platform mouse event information.
+///
+typedef void* cef_platform_mouse_event_t;
+
+///
 /// Touch points states types.
 ///
 typedef enum {

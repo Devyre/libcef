@@ -37,6 +37,7 @@ class CefBrowserPlatformDelegateChrome
   void SendMouseWheelEvent(const CefMouseEvent& event,
                            int deltaX,
                            int deltaY) override;
+  void SendMouseWheelEvent(const CefPlatformMouseEvent& event) override;
   gfx::Point GetScreenPoint(const gfx::Point& view,
                             bool want_dip_coords) const override;
   void ViewText(const std::string& text) override;

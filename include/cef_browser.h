@@ -722,6 +722,7 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   virtual void SendMouseWheelEvent(const CefMouseEvent& event,
                                    int deltaX,
                                    int deltaY) = 0;
+  virtual void SendMouseWheelEvent(const CefPlatformMouseEvent& event) = 0;
 
   ///
   /// Send a touch event to the browser for a windowless browser.

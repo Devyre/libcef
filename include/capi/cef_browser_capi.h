@@ -689,6 +689,8 @@ typedef struct _cef_browser_host_t {
                                              const cef_mouse_event_t* event,
                                              int deltaX,
                                              int deltaY);
+  void(CEF_CALLBACK* send_platform_mouse_wheel_event)(struct _cef_browser_host_t* self,
+                                             const cef_platform_mouse_event_t event);
 
   ///
   /// Send a touch event to the browser for a windowless browser.

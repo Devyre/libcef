@@ -245,6 +245,7 @@ class CefBrowserPlatformDelegate {
   virtual void SendMouseWheelEvent(const CefMouseEvent& event,
                                    int deltaX,
                                    int deltaY);
+  virtual void SendMouseWheelEvent(const CefPlatformMouseEvent& event);
   virtual void SendTouchEvent(const CefTouchEvent& event);
 
   // Send focus event. The browser's WebContents may be NULL when this method is

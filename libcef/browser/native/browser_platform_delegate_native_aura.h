@@ -35,6 +35,7 @@ class CefBrowserPlatformDelegateNativeAura
   void SendMouseWheelEvent(const CefMouseEvent& event,
                            int deltaX,
                            int deltaY) override;
+  void SendMouseWheelEvent(const CefPlatformMouseEvent& event) override;
   void SendTouchEvent(const CefTouchEvent& event) override;
   std::unique_ptr<CefMenuRunner> CreateMenuRunner() override;
   gfx::Point GetScreenPoint(const gfx::Point& view,

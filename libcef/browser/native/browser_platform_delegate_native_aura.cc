@@ -71,6 +71,20 @@ void CefBrowserPlatformDelegateNativeAura::SendMouseWheelEvent(
   view->OnMouseEvent(&ui_event);
 }
 
+void CefBrowserPlatformDelegateNativeAura::SendMouseWheelEvent(
+    const CefPlatformMouseEvent& event) {
+  auto view = GetHostView();
+  if (!view) {
+    return;
+  }
+
+  ui::PlatformEvent* e = (ui::PlatformEvent*) &event;
+  ui::MouseWheelEvent wheel_event(*e);
+  blink::WebMouseWheelEvent web_event = ui::MakeWebMouseWheelEvent(wheel_event);
+  ui::LatencyInfo* latency = wheel_event.latency();
+  view->ProcessMouseWheelEvent(web_event, latency ? *latency : ui::LatencyInfo {});
+}
+
 void CefBrowserPlatformDelegateNativeAura::SendTouchEvent(
     const CefTouchEvent& event) {
   NOTIMPLEMENTED();

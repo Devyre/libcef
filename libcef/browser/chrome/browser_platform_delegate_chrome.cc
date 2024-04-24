@@ -89,6 +89,11 @@ void CefBrowserPlatformDelegateChrome::SendMouseWheelEvent(
   native_delegate_->SendMouseWheelEvent(event, deltaX, deltaY);
 }
 
+void CefBrowserPlatformDelegateChrome::SendMouseWheelEvent(
+    const CefPlatformMouseEvent& event) {
+  native_delegate_->SendMouseWheelEvent(event);
+}
+
 gfx::Point CefBrowserPlatformDelegateChrome::GetScreenPoint(
     const gfx::Point& view,
     bool want_dip_coords) const {
