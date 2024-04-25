@@ -920,6 +920,27 @@ browser_host_send_mouse_click_event(struct _cef_browser_host_t* self,
 }
 
 void CEF_CALLBACK
+browser_host_send_platform_mouse_click_event(struct _cef_browser_host_t* self,
+                                    const cef_platform_mouse_event_t event) {
+  shutdown_checker::AssertNotShutdown();
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self) {
+    return;
+  }
+  // Verify param: event; type: simple_byref_const
+  DCHECK(event);
+  if (!event) {
+    return;
+  }
+
+  // Execute
+  CefBrowserHostCppToC::Get(self)->SendMouseClickEvent(event);
+}
+
+void CEF_CALLBACK
 browser_host_send_mouse_move_event(struct _cef_browser_host_t* self,
                                    const cef_mouse_event_t* event,
                                    int mouseLeave) {
@@ -943,6 +964,27 @@ browser_host_send_mouse_move_event(struct _cef_browser_host_t* self,
   // Execute
   CefBrowserHostCppToC::Get(self)->SendMouseMoveEvent(
       eventVal, mouseLeave ? true : false);
+}
+
+void CEF_CALLBACK
+browser_host_send_platform_mouse_move_event(struct _cef_browser_host_t* self,
+                                    const cef_platform_mouse_event_t event) {
+  shutdown_checker::AssertNotShutdown();
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self) {
+    return;
+  }
+  // Verify param: event; type: simple_byref_const
+  DCHECK(event);
+  if (!event) {
+    return;
+  }
+
+  // Execute
+  CefBrowserHostCppToC::Get(self)->SendMouseMoveEvent(event);
 }
 
 void CEF_CALLBACK
@@ -1611,7 +1653,9 @@ CefBrowserHostCppToC::CefBrowserHostCppToC() {
       browser_host_send_external_begin_frame;
   GetStruct()->send_key_event = browser_host_send_key_event;
   GetStruct()->send_mouse_click_event = browser_host_send_mouse_click_event;
+  GetStruct()->send_platform_mouse_click_event = browser_host_send_platform_mouse_click_event;
   GetStruct()->send_mouse_move_event = browser_host_send_mouse_move_event;
+  GetStruct()->send_platform_mouse_move_event = browser_host_send_platform_mouse_move_event;
   GetStruct()->send_mouse_wheel_event = browser_host_send_mouse_wheel_event;
   GetStruct()->send_platform_mouse_wheel_event = browser_host_send_platform_mouse_wheel_event;
   GetStruct()->send_touch_event = browser_host_send_touch_event;

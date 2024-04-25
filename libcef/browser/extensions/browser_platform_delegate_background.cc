@@ -59,9 +59,19 @@ void CefBrowserPlatformDelegateBackground::SendMouseClickEvent(
   // Nothing to do here.
 }
 
+void CefBrowserPlatformDelegateBackground::SendMouseClickEvent(
+    const CefPlatformMouseEvent& event) {
+  // Nothing to do here.
+}
+
 void CefBrowserPlatformDelegateBackground::SendMouseMoveEvent(
     const CefMouseEvent& event,
     bool mouseLeave) {
+  // Nothing to do here.
+}
+
+void CefBrowserPlatformDelegateBackground::SendMouseMoveEvent(
+    const CefPlatformMouseEvent& event) {
   // Nothing to do here.
 }
 

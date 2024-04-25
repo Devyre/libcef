@@ -701,6 +701,7 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
                                    MouseButtonType type,
                                    bool mouseUp,
                                    int clickCount) = 0;
+  virtual void SendMouseClickEvent(const CefPlatformMouseEvent& event) = 0;
 
   ///
   /// Send a mouse move event to the browser. The |x| and |y| coordinates are
@@ -709,6 +710,7 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   /*--cef()--*/
   virtual void SendMouseMoveEvent(const CefMouseEvent& event,
                                   bool mouseLeave) = 0;
+  virtual void SendMouseMoveEvent(const CefPlatformMouseEvent& event) = 0;
 
   ///
   /// Send a mouse wheel event to the browser. The |x| and |y| coordinates are

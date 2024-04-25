@@ -303,8 +303,16 @@ void CefBrowserPlatformDelegate::SendMouseClickEvent(
   NOTIMPLEMENTED();
 }
 
+void CefBrowserPlatformDelegate::SendMouseClickEvent(const CefPlatformMouseEvent& event) {
+  NOTIMPLEMENTED();
+}
+
 void CefBrowserPlatformDelegate::SendMouseMoveEvent(const CefMouseEvent& event,
                                                     bool mouseLeave) {
+  NOTIMPLEMENTED();
+}
+
+void CefBrowserPlatformDelegate::SendMouseMoveEvent(const CefPlatformMouseEvent& event) {
   NOTIMPLEMENTED();
 }
 

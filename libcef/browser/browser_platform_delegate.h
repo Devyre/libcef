@@ -241,7 +241,9 @@ class CefBrowserPlatformDelegate {
                                    CefBrowserHost::MouseButtonType type,
                                    bool mouseUp,
                                    int clickCount);
+  virtual void SendMouseClickEvent(const CefPlatformMouseEvent& event);
   virtual void SendMouseMoveEvent(const CefMouseEvent& event, bool mouseLeave);
+  virtual void SendMouseMoveEvent(const CefPlatformMouseEvent& event);
   virtual void SendMouseWheelEvent(const CefMouseEvent& event,
                                    int deltaX,
                                    int deltaY);

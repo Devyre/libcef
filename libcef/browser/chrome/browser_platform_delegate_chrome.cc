@@ -76,10 +76,20 @@ void CefBrowserPlatformDelegateChrome::SendMouseClickEvent(
   native_delegate_->SendMouseClickEvent(event, type, mouseUp, clickCount);
 }
 
+void CefBrowserPlatformDelegateChrome::SendMouseClickEvent(
+    const CefPlatformMouseEvent& event) {
+  native_delegate_->SendMouseClickEvent(event);
+}
+
 void CefBrowserPlatformDelegateChrome::SendMouseMoveEvent(
     const CefMouseEvent& event,
     bool mouseLeave) {
   native_delegate_->SendMouseMoveEvent(event, mouseLeave);
+}
+
+void CefBrowserPlatformDelegateChrome::SendMouseMoveEvent(
+    const CefPlatformMouseEvent& event) {
+  native_delegate_->SendMouseMoveEvent(event);
 }
 
 void CefBrowserPlatformDelegateChrome::SendMouseWheelEvent(

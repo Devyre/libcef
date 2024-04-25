@@ -811,6 +811,21 @@ void CefBrowserHostCToCpp::SendMouseClickEvent(const CefMouseEvent& event,
 }
 
 NO_SANITIZE("cfi-icall")
+void CefBrowserHostCToCpp::SendMouseClickEvent(const CefPlatformMouseEvent& event) {
+  shutdown_checker::AssertNotShutdown();
+
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, send_platform_mouse_click_event)) {
+    return;
+  }
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  _struct->send_platform_mouse_click_event(_struct, event);
+}
+
+NO_SANITIZE("cfi-icall")
 void CefBrowserHostCToCpp::SendMouseMoveEvent(const CefMouseEvent& event,
                                               bool mouseLeave) {
   shutdown_checker::AssertNotShutdown();
@@ -824,6 +839,21 @@ void CefBrowserHostCToCpp::SendMouseMoveEvent(const CefMouseEvent& event,
 
   // Execute
   _struct->send_mouse_move_event(_struct, &event, mouseLeave);
+}
+
+NO_SANITIZE("cfi-icall")
+void CefBrowserHostCToCpp::SendMouseMoveEvent(const CefPlatformMouseEvent& event) {
+  shutdown_checker::AssertNotShutdown();
+
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, send_platform_mouse_move_event)) {
+    return;
+  }
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  _struct->send_platform_mouse_move_event(_struct, event);
 }
 
 NO_SANITIZE("cfi-icall")

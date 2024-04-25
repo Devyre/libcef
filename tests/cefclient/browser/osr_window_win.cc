@@ -572,102 +572,77 @@ void OsrWindowWin::OnMouseEvent(UINT message, WPARAM wParam, LPARAM lParam) {
     browser_host = browser_->GetHost();
   }
 
-  LONG currentTime = 0;
-  bool cancelPreviousClick = false;
+  struct CHROME_POINT {
+    LONG x;
+    LONG y;
+  };
 
-  if (message == WM_LBUTTONDOWN || message == WM_RBUTTONDOWN ||
-      message == WM_MBUTTONDOWN || message == WM_MOUSEMOVE ||
-      message == WM_MOUSELEAVE) {
-    currentTime = GetMessageTime();
-    int x = GET_X_LPARAM(lParam);
-    int y = GET_Y_LPARAM(lParam);
-    cancelPreviousClick =
-        (abs(last_click_x_ - x) > (GetSystemMetrics(SM_CXDOUBLECLK) / 2)) ||
-        (abs(last_click_y_ - y) > (GetSystemMetrics(SM_CYDOUBLECLK) / 2)) ||
-        ((currentTime - last_click_time_) > GetDoubleClickTime());
-    if (cancelPreviousClick &&
-        (message == WM_MOUSEMOVE || message == WM_MOUSELEAVE)) {
-      last_click_count_ = 1;
-      last_click_x_ = 0;
-      last_click_y_ = 0;
-      last_click_time_ = 0;
-    }
-  }
+  struct CHROME_MSG {
+    HWND hwnd;
+    UINT message;
+    WPARAM wParam;
+    LPARAM lParam;
+    DWORD time;
+    CHROME_POINT pt;
+  };
 
-  switch (message) {
+  DWORD currentTime = (DWORD) ::GetMessageTime();
+  switch (message)
+  {
     case WM_LBUTTONDOWN:
+    case WM_LBUTTONDBLCLK:
+    case WM_LBUTTONUP:
     case WM_RBUTTONDOWN:
-    case WM_MBUTTONDOWN: {
-      ::SetCapture(hwnd_);
-      ::SetFocus(hwnd_);
+    case WM_RBUTTONDBLCLK:
+    case WM_RBUTTONUP:
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONDBLCLK:
+    case WM_MBUTTONUP:
       int x = GET_X_LPARAM(lParam);
       int y = GET_Y_LPARAM(lParam);
-      if (wParam & MK_SHIFT) {
-        // Start rotation effect.
-        last_mouse_pos_.x = current_mouse_pos_.x = x;
-        last_mouse_pos_.y = current_mouse_pos_.y = y;
-        mouse_rotation_ = true;
-      } else {
-        CefBrowserHost::MouseButtonType btnType =
-            (message == WM_LBUTTONDOWN
-                 ? MBT_LEFT
-                 : (message == WM_RBUTTONDOWN ? MBT_RIGHT : MBT_MIDDLE));
-        if (!cancelPreviousClick && (btnType == last_click_button_)) {
-          ++last_click_count_;
+
+      if (message == WM_LBUTTONDOWN ||
+          message == WM_RBUTTONDOWN ||
+          message == WM_MBUTTONDOWN) {
+        ::SetCapture(hwnd_);
+        ::SetFocus(hwnd_);
+      }
+      else if (message == WM_LBUTTONUP ||
+               message == WM_RBUTTONUP ||
+               message == WM_MBUTTONUP) {
+        if (::GetCapture() == hwnd_) {
+          ::ReleaseCapture();
+        }
+
+        if (mouse_rotation_) {
+          // End rotation effect.
+          mouse_rotation_ = false;
+          render_handler_->SetSpin(0, 0);
         } else {
-          last_click_count_ = 1;
-          last_click_x_ = x;
-          last_click_y_ = y;
-        }
-        last_click_time_ = currentTime;
-        last_click_button_ = btnType;
-
-        if (browser_host) {
-          CefMouseEvent mouse_event;
-          mouse_event.x = x;
-          mouse_event.y = y;
-          last_mouse_down_on_view_ = !IsOverPopupWidget(x, y);
-          ApplyPopupOffset(mouse_event.x, mouse_event.y);
-          DeviceToLogical(mouse_event, device_scale_factor_);
-          mouse_event.modifiers = GetCefMouseModifiers(wParam);
-          browser_host->SendMouseClickEvent(mouse_event, btnType, false,
-                                            last_click_count_);
-        }
-      }
-    } break;
-
-    case WM_LBUTTONUP:
-    case WM_RBUTTONUP:
-    case WM_MBUTTONUP:
-      if (GetCapture() == hwnd_) {
-        ReleaseCapture();
-      }
-      if (mouse_rotation_) {
-        // End rotation effect.
-        mouse_rotation_ = false;
-        render_handler_->SetSpin(0, 0);
-      } else {
-        int x = GET_X_LPARAM(lParam);
-        int y = GET_Y_LPARAM(lParam);
-        CefBrowserHost::MouseButtonType btnType =
-            (message == WM_LBUTTONUP
-                 ? MBT_LEFT
-                 : (message == WM_RBUTTONUP ? MBT_RIGHT : MBT_MIDDLE));
-        if (browser_host) {
-          CefMouseEvent mouse_event;
-          mouse_event.x = x;
-          mouse_event.y = y;
-          if (last_mouse_down_on_view_ && IsOverPopupWidget(x, y) &&
-              (GetPopupXOffset() || GetPopupYOffset())) {
-            break;
+          CefBrowserHost::MouseButtonType btnType =
+              (message == WM_LBUTTONUP
+                  ? MBT_LEFT
+                  : (message == WM_RBUTTONUP ? MBT_RIGHT : MBT_MIDDLE));
+          if (browser_host) {
+            if (last_mouse_down_on_view_ && IsOverPopupWidget(x, y) &&
+                (GetPopupXOffset() || GetPopupYOffset())) {
+              break;
+            }
+            ApplyPopupOffset(x, y);
           }
-          ApplyPopupOffset(mouse_event.x, mouse_event.y);
-          DeviceToLogical(mouse_event, device_scale_factor_);
-          mouse_event.modifiers = GetCefMouseModifiers(wParam);
-          browser_host->SendMouseClickEvent(mouse_event, btnType, true,
-                                            last_click_count_);
         }
       }
+
+      x = DeviceToLogical(GET_X_LPARAM(lParam), device_scale_factor_);
+      y = DeviceToLogical(GET_Y_LPARAM(lParam), device_scale_factor_);
+
+      CHROME_MSG platform_event = {
+        hwnd_, message, wParam,
+        MAKELPARAM(x, y),
+        (DWORD)currentTime
+      };
+
+      browser_host->SendMouseClickEvent((CefPlatformMouseEvent) &platform_event);
       break;
 
     case WM_MOUSEMOVE: {
@@ -695,13 +670,17 @@ void OsrWindowWin::OnMouseEvent(UINT message, WPARAM wParam, LPARAM lParam) {
         }
 
         if (browser_host) {
-          CefMouseEvent mouse_event;
-          mouse_event.x = x;
-          mouse_event.y = y;
-          ApplyPopupOffset(mouse_event.x, mouse_event.y);
-          DeviceToLogical(mouse_event, device_scale_factor_);
-          mouse_event.modifiers = GetCefMouseModifiers(wParam);
-          browser_host->SendMouseMoveEvent(mouse_event, false);
+          ApplyPopupOffset(x, y);
+          x = DeviceToLogical(x, device_scale_factor_);
+          y = DeviceToLogical(y, device_scale_factor_);
+
+          CHROME_MSG platform_event = {
+            hwnd_, message, wParam,
+            MAKELPARAM(x, y),
+            (DWORD)currentTime
+          };
+
+          browser_host->SendMouseMoveEvent((CefPlatformMouseEvent) &platform_event);
         }
       }
       break;
@@ -724,16 +703,22 @@ void OsrWindowWin::OnMouseEvent(UINT message, WPARAM wParam, LPARAM lParam) {
         ::GetCursorPos(&p);
         ::ScreenToClient(hwnd_, &p);
 
-        CefMouseEvent mouse_event;
-        mouse_event.x = p.x;
-        mouse_event.y = p.y;
-        DeviceToLogical(mouse_event, device_scale_factor_);
-        mouse_event.modifiers = GetCefMouseModifiers(wParam);
-        browser_host->SendMouseMoveEvent(mouse_event, true);
-      }
-    } break;
+        int x = DeviceToLogical((int) p.x, device_scale_factor_);
+        int y = DeviceToLogical((int) p.y, device_scale_factor_);
 
-    case WM_MOUSEWHEEL:
+        CHROME_MSG platform_event = {
+          hwnd_, message, wParam,
+          MAKELPARAM(x, y),
+          (DWORD) currentTime
+        };
+
+        browser_host->SendMouseMoveEvent((CefPlatformMouseEvent) &platform_event);
+      }
+
+      break;
+    }
+
+    case WM_MOUSEWHEEL: {
       if (browser_host) {
         POINT screen_point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
         HWND scrolled_wnd = ::WindowFromPoint(screen_point);
@@ -742,38 +727,28 @@ void OsrWindowWin::OnMouseEvent(UINT message, WPARAM wParam, LPARAM lParam) {
         }
 
         ScreenToClient(hwnd_, &screen_point);
-        //int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+        // int delta = GET_WHEEL_DELTA_WPARAM(wParam);
 
-        CefMouseEvent mouse_event;
-        mouse_event.x = screen_point.x;
-        mouse_event.y = screen_point.y;
-        ApplyPopupOffset(mouse_event.x, mouse_event.y);
-        DeviceToLogical(mouse_event, device_scale_factor_);
-        mouse_event.modifiers = GetCefMouseModifiers(wParam);
+        int x = screen_point.x;
+        int y = screen_point.y;
+        ApplyPopupOffset(x, y);
 
-        struct CHROME_POINT {
-          LONG x;
-          LONG y;
-        };
+        x = DeviceToLogical(x, device_scale_factor_);
+        y = DeviceToLogical(y, device_scale_factor_);
 
-		struct CHROME_MSG {
-          HWND hwnd;
-          UINT message;
-          WPARAM wParam;
-          LPARAM lParam;
-          DWORD time;
-          CHROME_POINT pt;
-        };
-
-        CHROME_MSG platform_event = {
-			hwnd_, message, wParam,
-			MAKELPARAM(mouse_event.x, mouse_event.y),
-			(DWORD) currentTime
-		};
+        CHROME_MSG platform_event = {hwnd_, message, wParam,
+                                     MAKELPARAM(x, y),
+                                     (DWORD) currentTime};
 
         browser_host->SendMouseWheelEvent(
             (CefPlatformMouseEvent)&platform_event);
+
       }
+
+      break;
+    }
+
+    default:
       break;
   }
 }

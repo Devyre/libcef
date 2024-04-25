@@ -98,7 +98,9 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
                            MouseButtonType type,
                            bool mouseUp,
                            int clickCount) override;
+  void SendMouseClickEvent(const CefPlatformMouseEvent& event) override;
   void SendMouseMoveEvent(const CefMouseEvent& event, bool mouseLeave) override;
+  void SendMouseMoveEvent(const CefPlatformMouseEvent& event) override;
   void SendMouseWheelEvent(const CefMouseEvent& event,
                            int deltaX,
                            int deltaY) override;

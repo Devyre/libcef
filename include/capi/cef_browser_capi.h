@@ -668,6 +668,8 @@ typedef struct _cef_browser_host_t {
                                              cef_mouse_button_type_t type,
                                              int mouseUp,
                                              int clickCount);
+  void(CEF_CALLBACK* send_platform_mouse_click_event)(struct _cef_browser_host_t* self,
+                                             const cef_platform_mouse_event_t event);
 
   ///
   /// Send a mouse move event to the browser. The |x| and |y| coordinates are
@@ -676,6 +678,8 @@ typedef struct _cef_browser_host_t {
   void(CEF_CALLBACK* send_mouse_move_event)(struct _cef_browser_host_t* self,
                                             const cef_mouse_event_t* event,
                                             int mouseLeave);
+  void(CEF_CALLBACK* send_platform_mouse_move_event)(struct _cef_browser_host_t* self,
+                                             const cef_platform_mouse_event_t event);
 
   ///
   /// Send a mouse wheel event to the browser. The |x| and |y| coordinates are

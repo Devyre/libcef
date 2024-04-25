@@ -46,6 +46,20 @@ void CefBrowserPlatformDelegateNativeAura::SendMouseClickEvent(
   view->OnMouseEvent(&ui_event);
 }
 
+void CefBrowserPlatformDelegateNativeAura::SendMouseClickEvent(
+    const CefPlatformMouseEvent& event) {
+  auto view = GetHostView();
+  if (!view) {
+    return;
+  }
+
+  ui::PlatformEvent* e = (ui::PlatformEvent*) &event;
+  ui::MouseEvent mouse_event(*e);
+  blink::WebMouseEvent web_event = ui::MakeWebMouseEvent(mouse_event);
+  ui::LatencyInfo* latency = mouse_event.latency();
+  view->ProcessMouseEvent(web_event, latency ? *latency : ui::LatencyInfo{});
+}
+
 void CefBrowserPlatformDelegateNativeAura::SendMouseMoveEvent(
     const CefMouseEvent& event,
     bool mouseLeave) {
@@ -56,6 +70,20 @@ void CefBrowserPlatformDelegateNativeAura::SendMouseMoveEvent(
 
   ui::MouseEvent ui_event = TranslateUiMoveEvent(event, mouseLeave);
   view->OnMouseEvent(&ui_event);
+}
+
+void CefBrowserPlatformDelegateNativeAura::SendMouseMoveEvent(
+    const CefPlatformMouseEvent& event) {
+  auto view = GetHostView();
+  if (!view) {
+    return;
+  }
+
+  ui::PlatformEvent* e = (ui::PlatformEvent*) &event;
+  ui::MouseEvent mouse_event(*e);
+  blink::WebMouseEvent web_event = ui::MakeWebMouseEvent(mouse_event);
+  ui::LatencyInfo* latency = mouse_event.latency();
+  view->ProcessMouseEvent(web_event, latency ? *latency : ui::LatencyInfo {});
 }
 
 void CefBrowserPlatformDelegateNativeAura::SendMouseWheelEvent(

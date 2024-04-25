@@ -836,8 +836,9 @@ void CefBrowserHostBase::SendMouseClickEvent(const CefMouseEvent& event,
                                              bool mouseUp,
                                              int clickCount) {
   if (!CEF_CURRENTLY_ON_UIT()) {
+    using TSendMouseClickEvent = void(CefBrowserHostBase::*)(const CefMouseEvent&, MouseButtonType, bool, int);
     CEF_POST_TASK(CEF_UIT,
-                  base::BindOnce(&CefBrowserHostBase::SendMouseClickEvent, this,
+                  base::BindOnce((TSendMouseClickEvent) &CefBrowserHostBase::SendMouseClickEvent, this,
                                  event, type, mouseUp, clickCount));
     return;
   }
@@ -847,17 +848,52 @@ void CefBrowserHostBase::SendMouseClickEvent(const CefMouseEvent& event,
   }
 }
 
+void CefBrowserHostBase::SendMouseClickEvent(const CefPlatformMouseEvent& event) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    using TSendMouseClickEvent =
+        void (CefBrowserHostBase::*)(const CefPlatformMouseEvent&);
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce(
+            (TSendMouseClickEvent) &CefBrowserHostBase::SendMouseClickEvent,
+            this, event));
+    return;
+  }
+
+  if (platform_delegate_) {
+    platform_delegate_->SendMouseClickEvent(event);
+  }
+}
+
 void CefBrowserHostBase::SendMouseMoveEvent(const CefMouseEvent& event,
                                             bool mouseLeave) {
   if (!CEF_CURRENTLY_ON_UIT()) {
+    using TSendMouseMoveEvent = void(CefBrowserHostBase::*)(const CefMouseEvent&, bool);
     CEF_POST_TASK(CEF_UIT,
-                  base::BindOnce(&CefBrowserHostBase::SendMouseMoveEvent, this,
+                  base::BindOnce((TSendMouseMoveEvent) &CefBrowserHostBase::SendMouseMoveEvent, this,
                                  event, mouseLeave));
     return;
   }
 
   if (platform_delegate_) {
     platform_delegate_->SendMouseMoveEvent(event, mouseLeave);
+  }
+}
+
+void CefBrowserHostBase::SendMouseMoveEvent(const CefPlatformMouseEvent& event) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    using TSendMouseMoveEvent =
+        void (CefBrowserHostBase::*)(const CefPlatformMouseEvent&);
+    CEF_POST_TASK(
+        CEF_UIT,
+        base::BindOnce(
+            (TSendMouseMoveEvent)&CefBrowserHostBase::SendMouseMoveEvent,
+            this, event));
+    return;
+  }
+
+  if (platform_delegate_) {
+    platform_delegate_->SendMouseMoveEvent(event);
   }
 }
 
