@@ -80,18 +80,21 @@ buildflag_header("features") {
   header = "features.h"
 
   flags = [
+    "ENABLE_ALLOY_BOOTSTRAP=$enable_alloy_bootstrap",
     "ENABLE_CEF=$enable_cef",
     "IS_CEF_SANDBOX_BUILD=$is_cef_sandbox_build",
   ]
 }
 
 # Configuration for all targets that include CEF source code library-side.
+# See //cef/libcef_includes_config for CEF client-side configuration.
 config("config") {
-  # CEF sources use includes relative to the CEF root directory.
   include_dirs = [
+    # cef/include/ directory uses #includes relative to the cef/ directory.
     "//cef",
 
-    # CEF generates some header files that also need to be discoverable.
+    # CEF generated header files that also need to be discoverable.
+    # These #includes from library-side code will always be prefixed with cef/.
     "$root_build_dir/includes",
   ]
   defines = [

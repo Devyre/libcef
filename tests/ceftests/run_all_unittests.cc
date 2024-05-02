@@ -5,7 +5,6 @@
 #include <memory>
 
 #include "include/base/cef_build.h"
-#include "include/cef_config.h"
 
 #if defined(OS_LINUX) && defined(CEF_X11)
 #include <X11/Xlib.h>
@@ -233,15 +232,19 @@ int main(int argc, char* argv[]) {
   }
 
   // Log the current configuration.
-  LOG(WARNING)
-      << "Using " << (IsChromeBootstrap() ? "Chrome" : "Alloy")
-      << " bootstrap; " << (UseAlloyStyleBrowserGlobal() ? "Alloy" : "Chrome")
-      << " style browser; "
-      << (UseViewsGlobal()
-              ? (std::string(UseAlloyStyleWindowGlobal() ? "Alloy" : "Chrome") +
-                 " style window; ")
-              : "")
-      << (UseViewsGlobal() ? "Views" : "Native") << "-hosted (not a warning)";
+  LOG(WARNING) << "Using "
+#if !defined(DISABLE_ALLOY_BOOTSTRAP)
+               << (IsChromeBootstrap() ? "Chrome" : "Alloy") << " bootstrap; "
+#endif
+               << (UseAlloyStyleBrowserGlobal() ? "Alloy" : "Chrome")
+               << " style browser; "
+               << (UseViewsGlobal()
+                       ? (std::string(UseAlloyStyleWindowGlobal() ? "Alloy"
+                                                                  : "Chrome") +
+                          " style window; ")
+                       : "")
+               << (UseViewsGlobal() ? "Views" : "Native")
+               << "-hosted (not a warning)";
 
   std::unique_ptr<client::MainMessageLoop> message_loop;
 

@@ -8,10 +8,9 @@
 
 #include <memory>
 
-#include "libcef/browser/browser_host_base.h"
-#include "libcef/browser/chrome/browser_delegate.h"
-
 #include "base/memory/weak_ptr.h"
+#include "cef/libcef/browser/browser_host_base.h"
+#include "cef/libcef/browser/chrome/browser_delegate.h"
 #include "chrome/browser/ui/browser.h"
 
 class ChromeBrowserDelegate;
@@ -114,8 +113,6 @@ class ChromeBrowserHostImpl : public CefBrowserHostBase {
   void SetAutoResizeEnabled(bool enabled,
                             const CefSize& min_size,
                             const CefSize& max_size) override;
-  CefRefPtr<CefExtension> GetExtension() override;
-  bool IsBackgroundHost() override;
   bool CanExecuteChromeCommand(int command_id) override;
   void ExecuteChromeCommand(int command_id,
                             cef_window_open_disposition_t disposition) override;

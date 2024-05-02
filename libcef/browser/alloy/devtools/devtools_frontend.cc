@@ -2,21 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/alloy/devtools/devtools_frontend.h"
+#include "cef/libcef/browser/alloy/devtools/devtools_frontend.h"
 
 #include <stddef.h>
 
 #include <iomanip>
 #include <memory>
 #include <utility>
-
-#include "libcef/browser/alloy/devtools/devtools_manager_delegate.h"
-#include "libcef/browser/browser_context.h"
-#include "libcef/browser/net/devtools_scheme_handler.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/common/cef_switches.h"
-#include "libcef/common/task_runner_manager.h"
-#include "libcef/features/runtime_checks.h"
 
 #include "base/base64.h"
 #include "base/command_line.h"
@@ -31,6 +23,13 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/uuid.h"
 #include "base/values.h"
+#include "cef/libcef/browser/alloy/devtools/devtools_manager_delegate.h"
+#include "cef/libcef/browser/browser_context.h"
+#include "cef/libcef/browser/net/devtools_scheme_handler.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/common/cef_switches.h"
+#include "cef/libcef/common/task_runner_manager.h"
+#include "cef/libcef/features/runtime_checks.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/common/pref_names.h"
 #include "components/prefs/scoped_user_pref_update.h"
@@ -166,7 +165,7 @@ void LogProtocolMessage(const base::FilePath& log_file,
   WriteTimestamp(stream);
   stream << ": " << type_label << ": " << to_log << "\n";
   const std::string& str = stream.str();
-  if (!base::AppendToFile(log_file, base::StringPiece(str))) {
+  if (!base::AppendToFile(log_file, std::string_view(str))) {
     LOG(ERROR) << "Failed to write file " << log_file.value();
     log_error = true;
   }
@@ -200,7 +199,7 @@ class CefDevToolsFrontend::NetworkResourceLoader
     response_headers_ = response_head.headers;
   }
 
-  void OnDataReceived(base::StringPiece chunk,
+  void OnDataReceived(std::string_view chunk,
                       base::OnceClosure resume) override {
     base::Value chunkValue;
 
@@ -577,8 +576,8 @@ void CefDevToolsFrontend::DispatchProtocolMessage(
     return;
   }
 
-  base::StringPiece str_message(reinterpret_cast<const char*>(message.data()),
-                                message.size());
+  std::string_view str_message(reinterpret_cast<const char*>(message.data()),
+                               message.size());
   if (ProtocolLoggingEnabled()) {
     // Quick check to avoid parsing the JSON object. Events begin with a
     // "method" value whereas method results begin with an "id" value.
@@ -595,7 +594,7 @@ void CefDevToolsFrontend::DispatchProtocolMessage(
     size_t total_size = str_message.length();
     for (size_t pos = 0; pos < str_message.length();
          pos += kMaxMessageChunkSize) {
-      base::StringPiece str_message_chunk =
+      std::string_view str_message_chunk =
           str_message.substr(pos, kMaxMessageChunkSize);
 
       CallClientFunction(
@@ -643,7 +642,7 @@ bool CefDevToolsFrontend::ProtocolLoggingEnabled() const {
 }
 
 void CefDevToolsFrontend::LogProtocolMessage(ProtocolMessageType type,
-                                             const base::StringPiece& message) {
+                                             const std::string_view& message) {
   DCHECK(ProtocolLoggingEnabled());
 
   std::string to_log(message.substr(0, kMaxLogLineLength));

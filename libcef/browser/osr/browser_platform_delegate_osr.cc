@@ -2,25 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/osr/browser_platform_delegate_osr.h"
+#include "cef/libcef/browser/osr/browser_platform_delegate_osr.h"
 
 #include <utility>
 
-#include "libcef/browser/image_impl.h"
-#include "libcef/browser/osr/osr_accessibility_util.h"
-#include "libcef/browser/osr/render_widget_host_view_osr.h"
-#include "libcef/browser/osr/touch_selection_controller_client_osr.h"
-#include "libcef/browser/osr/web_contents_view_osr.h"
-#include "libcef/browser/views/view_util.h"
-#include "libcef/common/drag_data_impl.h"
-
 #include "base/task/current_thread.h"
+#include "cef/libcef/browser/image_impl.h"
+#include "cef/libcef/browser/osr/osr_accessibility_util.h"
+#include "cef/libcef/browser/osr/render_widget_host_view_osr.h"
+#include "cef/libcef/browser/osr/touch_selection_controller_client_osr.h"
+#include "cef/libcef/browser/osr/web_contents_view_osr.h"
+#include "cef/libcef/browser/views/view_util.h"
+#include "cef/libcef/common/drag_data_impl.h"
 #include "content/browser/renderer_host/render_widget_host_input_event_router.h"
 #include "content/browser/web_contents/web_contents_impl.h"
 #include "content/public/browser/render_view_host.h"
 #include "ui/display/screen.h"
 #include "ui/events/base_event_utils.h"
-#include "ui/events/blink/web_input_event.h"
 
 CefBrowserPlatformDelegateOsr::CefBrowserPlatformDelegateOsr(
     std::unique_ptr<CefBrowserPlatformDelegateNative> native_delegate,
@@ -181,19 +179,6 @@ void CefBrowserPlatformDelegateOsr::SendMouseWheelEvent(
 
   blink::WebMouseWheelEvent web_event =
       native_delegate_->TranslateWebWheelEvent(event, deltaX, deltaY);
-  view->SendMouseWheelEvent(web_event);
-}
-
-void CefBrowserPlatformDelegateOsr::SendMouseWheelEvent(
-    const CefPlatformMouseEvent& event) {
-  CefRenderWidgetHostViewOSR* view = GetOSRHostView();
-  if (!view) {
-    return;
-  }
-
-  ui::PlatformEvent* e = (ui::PlatformEvent*) event;
-  ui::MouseWheelEvent wheel_event(*e);
-  blink::WebMouseWheelEvent web_event = ui::MakeWebMouseWheelEvent(wheel_event);
   view->SendMouseWheelEvent(web_event);
 }
 
@@ -368,17 +353,21 @@ void CefBrowserPlatformDelegateOsr::DragTargetDragEnter(
   gfx::PointF transformed_pt;
 
   // Some random crashes occured when GetWeakPtr is called on a null pointer
-  // that is the return of GetRenderWidgetHostAtPoint As the root cause is not
-  // yet understood (no reproducible scenario yet), the current fix is only a
-  // protection against null pointer dereferencing.
-  content::RenderWidgetHostImpl* ptr_current_rwh_for_drag =
-      web_contents->GetInputEventRouter()->GetRenderWidgetHostAtPoint(
+  // that is the return of GetRenderWidgetHostViewInputAtPoint. As the root
+  // cause is not yet understood (no reproducible scenario yet), the current fix
+  // is only a protection against null pointer dereferencing.
+  auto* view =
+      web_contents->GetInputEventRouter()->GetRenderWidgetHostViewInputAtPoint(
           web_contents->GetRenderViewHost()->GetWidget()->GetView(),
           gfx::PointF(client_pt), &transformed_pt);
-  if (!ptr_current_rwh_for_drag) {
+  if (!view) {
     return;
   }
-  current_rwh_for_drag_ = ptr_current_rwh_for_drag->GetWeakPtr();
+  auto* target_rwh = content::RenderWidgetHostImpl::From(
+      static_cast<content::RenderWidgetHostViewBase*>(view)
+          ->GetRenderWidgetHost());
+
+  current_rwh_for_drag_ = target_rwh->GetWeakPtr();
 
   current_rvh_for_drag_ = web_contents->GetRenderViewHost();
 
@@ -427,10 +416,13 @@ void CefBrowserPlatformDelegateOsr::DragTargetDragOver(
       GetScreenPoint(client_pt, /*want_dip_coords=*/false);
 
   gfx::PointF transformed_pt;
-  content::RenderWidgetHostImpl* target_rwh =
-      web_contents->GetInputEventRouter()->GetRenderWidgetHostAtPoint(
+  auto* view =
+      web_contents->GetInputEventRouter()->GetRenderWidgetHostViewInputAtPoint(
           web_contents->GetRenderViewHost()->GetWidget()->GetView(),
           gfx::PointF(client_pt), &transformed_pt);
+  auto* target_rwh = content::RenderWidgetHostImpl::From(
+      static_cast<content::RenderWidgetHostViewBase*>(view)
+          ->GetRenderWidgetHost());
 
   if (target_rwh != current_rwh_for_drag_.get()) {
     if (current_rwh_for_drag_) {
@@ -498,10 +490,13 @@ void CefBrowserPlatformDelegateOsr::DragTargetDrop(const CefMouseEvent& event) {
       GetScreenPoint(client_pt, /*want_dip_coords=*/false);
 
   gfx::PointF transformed_pt;
-  content::RenderWidgetHostImpl* target_rwh =
-      web_contents->GetInputEventRouter()->GetRenderWidgetHostAtPoint(
+  auto* view =
+      web_contents->GetInputEventRouter()->GetRenderWidgetHostViewInputAtPoint(
           web_contents->GetRenderViewHost()->GetWidget()->GetView(),
           gfx::PointF(client_pt), &transformed_pt);
+  auto* target_rwh = content::RenderWidgetHostImpl::From(
+      static_cast<content::RenderWidgetHostViewBase*>(view)
+          ->GetRenderWidgetHost());
 
   if (target_rwh != current_rwh_for_drag_.get()) {
     if (current_rwh_for_drag_) {

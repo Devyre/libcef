@@ -13,6 +13,7 @@
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
+
 #include "libcef_dll/cpptoc/client_cpptoc.h"
 #include "libcef_dll/cpptoc/dev_tools_message_observer_cpptoc.h"
 #include "libcef_dll/cpptoc/download_image_callback_cpptoc.h"
@@ -871,21 +872,6 @@ void CefBrowserHostCToCpp::SendMouseWheelEvent(const CefMouseEvent& event,
 
   // Execute
   _struct->send_mouse_wheel_event(_struct, &event, deltaX, deltaY);
-}
-
-NO_SANITIZE("cfi-icall")
-void CefBrowserHostCToCpp::SendMouseWheelEvent(const CefPlatformMouseEvent& event) {
-  shutdown_checker::AssertNotShutdown();
-
-  cef_browser_host_t* _struct = GetStruct();
-  if (CEF_MEMBER_MISSING(_struct, send_platform_mouse_wheel_event)) {
-    return;
-  }
-
-  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
-
-  // Execute
-  _struct->send_platform_mouse_wheel_event(_struct, event);
 }
 
 NO_SANITIZE("cfi-icall")

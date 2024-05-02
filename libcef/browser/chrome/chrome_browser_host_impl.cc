@@ -2,17 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/chrome/chrome_browser_host_impl.h"
-
-#include "libcef/browser/browser_platform_delegate.h"
-#include "libcef/browser/chrome/browser_platform_delegate_chrome.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/browser/views/browser_view_impl.h"
-#include "libcef/common/net/url_util.h"
-#include "libcef/features/runtime_checks.h"
+#include "cef/libcef/browser/chrome/chrome_browser_host_impl.h"
 
 #include "base/logging.h"
 #include "base/notreached.h"
+#include "cef/libcef/browser/browser_platform_delegate.h"
+#include "cef/libcef/browser/chrome/browser_platform_delegate_chrome.h"
+#include "cef/libcef/browser/chrome/views/chrome_browser_frame.h"
+#include "cef/libcef/browser/chrome/views/chrome_browser_view.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/browser/views/browser_view_impl.h"
+#include "cef/libcef/common/net/url_util.h"
+#include "cef/libcef/features/runtime_checks.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/browser_commands.h"
 #include "chrome/browser/ui/browser_navigator.h"
@@ -21,8 +22,6 @@
 #include "chrome/browser/ui/tabs/tab_strip_model.h"
 #include "chrome/browser/ui/views/frame/contents_web_view.h"
 #include "chrome/common/pref_names.h"
-#include "libcef/browser/chrome/views/chrome_browser_frame.h"
-#include "libcef/browser/chrome/views/chrome_browser_view.h"
 
 // static
 CefRefPtr<ChromeBrowserHostImpl> ChromeBrowserHostImpl::Create(
@@ -68,35 +67,45 @@ CefRefPtr<ChromeBrowserHostImpl> ChromeBrowserHostImpl::FromBaseChecked(
 // static
 CefRefPtr<ChromeBrowserHostImpl> ChromeBrowserHostImpl::GetBrowserForHost(
     const content::RenderViewHost* host) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   REQUIRE_CHROME_RUNTIME();
+#endif
   return FromBaseChecked(CefBrowserHostBase::GetBrowserForHost(host));
 }
 
 // static
 CefRefPtr<ChromeBrowserHostImpl> ChromeBrowserHostImpl::GetBrowserForHost(
     const content::RenderFrameHost* host) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   REQUIRE_CHROME_RUNTIME();
+#endif
   return FromBaseChecked(CefBrowserHostBase::GetBrowserForHost(host));
 }
 
 // static
 CefRefPtr<ChromeBrowserHostImpl> ChromeBrowserHostImpl::GetBrowserForContents(
     const content::WebContents* contents) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   REQUIRE_CHROME_RUNTIME();
+#endif
   return FromBaseChecked(CefBrowserHostBase::GetBrowserForContents(contents));
 }
 
 // static
 CefRefPtr<ChromeBrowserHostImpl> ChromeBrowserHostImpl::GetBrowserForGlobalId(
     const content::GlobalRenderFrameHostId& global_id) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   REQUIRE_CHROME_RUNTIME();
+#endif
   return FromBaseChecked(CefBrowserHostBase::GetBrowserForGlobalId(global_id));
 }
 
 // static
 CefRefPtr<ChromeBrowserHostImpl> ChromeBrowserHostImpl::GetBrowserForBrowser(
     const Browser* browser) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   REQUIRE_CHROME_RUNTIME();
+#endif
   // Return the ChromeBrowserHostImpl that is currently active.
   // Views-hosted Browsers will contain a single ChromeBrowserHostImpl.
   // Otherwise, there will be a ChromeBrowserHostImpl per Tab/WebContents.
@@ -146,7 +155,12 @@ void ChromeBrowserHostImpl::OnWebContentsDestroyed(
   // CefBrowserInfoManager::DestroyAllBrowsers().
   if (platform_delegate_) {
     platform_delegate_->WebContentsDestroyed(web_contents);
-    DestroyBrowser();
+
+    // Destroy the browser asynchronously to allow the current call stack
+    // to unwind (we may have been called via the TabStripModel owned by the
+    // Browser).
+    CEF_POST_TASK(CEF_UIT,
+                  base::BindOnce(&ChromeBrowserHostImpl::DestroyBrowser, this));
   }
 }
 
@@ -310,14 +324,6 @@ void ChromeBrowserHostImpl::SetAutoResizeEnabled(bool enabled,
                                                  const CefSize& min_size,
                                                  const CefSize& max_size) {
   NOTIMPLEMENTED();
-}
-
-CefRefPtr<CefExtension> ChromeBrowserHostImpl::GetExtension() {
-  return nullptr;
-}
-
-bool ChromeBrowserHostImpl::IsBackgroundHost() {
-  return false;
 }
 
 bool ChromeBrowserHostImpl::CanExecuteChromeCommand(int command_id) {

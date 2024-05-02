@@ -8,8 +8,7 @@
 
 #include <memory>
 
-#include "libcef/browser/request_context_impl.h"
-
+#include "cef/libcef/browser/request_context_impl.h"
 #include "chrome/browser/chrome_content_browser_client.h"
 #include "content/public/browser/web_contents_view_delegate.h"
 
@@ -62,6 +61,7 @@ class ChromeContentBrowserClientCef : public ChromeContentBrowserClient {
       int render_process_id,
       URLLoaderFactoryType type,
       const url::Origin& request_initiator,
+      const net::IsolationInfo& isolation_info,
       std::optional<int64_t> navigation_id,
       ukm::SourceIdObj ukm_source_id,
       network::URLLoaderFactoryBuilder& factory_builder,

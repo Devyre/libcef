@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/browser_frame.h"
+#include "cef/libcef/browser/browser_frame.h"
 
-#include "libcef/browser/browser_host_base.h"
-#include "libcef/browser/browser_info_manager.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/common/frame_util.h"
-
+#include "cef/libcef/browser/browser_host_base.h"
+#include "cef/libcef/browser/browser_info_manager.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/common/frame_util.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/web_contents.h"
@@ -59,10 +58,10 @@ void CefBrowserFrame::FrameAttached(
     bool reattached) {
   // Always send to the newly created RFH, which may be speculative when
   // navigating cross-origin.
-  bool excluded_type;
-  if (auto host = GetFrameHost(/*prefer_speculative=*/true, &excluded_type)) {
+  bool is_excluded;
+  if (auto host = GetFrameHost(/*prefer_speculative=*/true, &is_excluded)) {
     host->FrameAttached(std::move(render_frame), reattached);
-  } else if (excluded_type) {
+  } else if (is_excluded) {
     VLOG(1) << "frame "
             << frame_util::GetFrameDebugString(
                    render_frame_host()->GetGlobalFrameToken())
@@ -82,8 +81,8 @@ void CefBrowserFrame::UpdateDraggableRegions(
 
 CefRefPtr<CefFrameHostImpl> CefBrowserFrame::GetFrameHost(
     bool prefer_speculative,
-    bool* excluded_type) const {
+    bool* is_excluded) const {
   return CefBrowserInfoManager::GetFrameHost(
       render_frame_host(), prefer_speculative,
-      /*browser_info=*/nullptr, excluded_type);
+      /*browser_info=*/nullptr, is_excluded);
 }

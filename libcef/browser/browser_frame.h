@@ -6,9 +6,8 @@
 #define CEF_LIBCEF_BROWSER_BROWSER_FRAME_H_
 #pragma once
 
-#include "libcef/browser/frame_host_impl.h"
-#include "libcef/browser/frame_service_base.h"
-
+#include "cef/libcef/browser/frame_host_impl.h"
+#include "cef/libcef/browser/frame_service_base.h"
 #include "cef/libcef/common/mojom/cef.mojom.h"
 #include "mojo/public/cpp/bindings/binder_map.h"
 
@@ -49,7 +48,7 @@ class CefBrowserFrame
   bool ShouldCloseOnFinishNavigation() const override { return false; }
 
   CefRefPtr<CefFrameHostImpl> GetFrameHost(bool prefer_speculative,
-                                           bool* excluded_type = nullptr) const;
+                                           bool* is_excluded = nullptr) const;
 };
 
 #endif  // CEF_LIBCEF_BROWSER_BROWSER_FRAME_H_

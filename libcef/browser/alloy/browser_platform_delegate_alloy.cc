@@ -2,34 +2,59 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/alloy/browser_platform_delegate_alloy.h"
+#include "cef/libcef/browser/alloy/browser_platform_delegate_alloy.h"
 
 #include <memory>
 
-#include "libcef/browser/alloy/alloy_browser_host_impl.h"
-#include "libcef/browser/alloy/dialogs/alloy_javascript_dialog_manager_delegate.h"
-#include "libcef/browser/extensions/browser_extensions_util.h"
-#include "libcef/browser/extensions/extension_background_host.h"
-#include "libcef/browser/extensions/extension_system.h"
-#include "libcef/browser/extensions/extension_view_host.h"
-#include "libcef/browser/extensions/extension_web_contents_observer.h"
-#include "libcef/common/extensions/extensions_util.h"
-#include "libcef/common/net/url_util.h"
-#include "libcef/features/runtime_checks.h"
-
 #include "base/logging.h"
-#include "chrome/browser/printing/printing_init.h"
-#include "chrome/browser/ui/prefs/prefs_tab_helper.h"
+#include "cef/libcef/browser/alloy/alloy_browser_host_impl.h"
+#include "cef/libcef/browser/extensions/extension_background_host.h"
+#include "cef/libcef/browser/extensions/extension_system.h"
+#include "cef/libcef/browser/extensions/extension_view_host.h"
+#include "cef/libcef/browser/extensions/extension_web_contents_observer.h"
+#include "cef/libcef/common/extensions/extensions_util.h"
+#include "cef/libcef/common/net/url_util.h"
+#include "cef/libcef/features/features.h"
+#include "chrome/browser/task_manager/web_contents_tags.h"
+#include "chrome/browser/ui/tab_helpers.h"
 #include "components/find_in_page/find_tab_helper.h"
 #include "components/find_in_page/find_types.h"
-#include "components/javascript_dialogs/tab_modal_dialog_manager.h"
-#include "components/permissions/permission_request_manager.h"
-#include "components/zoom/zoom_controller.h"
+#include "components/performance_manager/embedder/performance_manager_registry.h"
 #include "content/browser/renderer_host/render_widget_host_impl.h"
 #include "content/public/browser/render_view_host.h"
 #include "extensions/browser/process_manager.h"
 #include "pdf/pdf_features.h"
 #include "third_party/blink/public/mojom/frame/find_in_page.mojom.h"
+
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+#include "cef/libcef/browser/alloy/dialogs/alloy_javascript_dialog_manager_delegate.h"
+#include "cef/libcef/features/runtime_checks.h"
+#include "chrome/browser/printing/printing_init.h"
+#include "chrome/browser/ui/prefs/prefs_tab_helper.h"
+#include "components/javascript_dialogs/tab_modal_dialog_manager.h"
+#include "components/permissions/permission_request_manager.h"
+#include "components/zoom/zoom_controller.h"
+#include "extensions/browser/extension_registry.h"
+#endif  // BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+
+namespace {
+
+const char kAttachedHelpersUserDataKey[] = "CefAttachedHelpers";
+
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+const extensions::Extension* GetExtensionForUrl(
+    content::BrowserContext* browser_context,
+    const GURL& url) {
+  auto* registry = extensions::ExtensionRegistry::Get(browser_context);
+  if (!registry) {
+    return nullptr;
+  }
+  std::string extension_id = url.host();
+  return registry->enabled_extensions().GetByID(extension_id);
+}
+#endif  // BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+
+}  // namespace
 
 CefBrowserPlatformDelegateAlloy::CefBrowserPlatformDelegateAlloy()
     : weak_ptr_factory_(this) {}
@@ -49,13 +74,13 @@ content::WebContents* CefBrowserPlatformDelegateAlloy::CreateWebContents(
   CHECK(browser_context);
 
   scoped_refptr<content::SiteInstance> site_instance;
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   if (extensions::ExtensionsEnabled() && !create_params.url.empty()) {
     GURL gurl = url_util::MakeGURL(create_params.url, /*fixup=*/true);
     if (!create_params.extension) {
       // We might be loading an extension app view where the extension URL is
       // provided by the client.
-      create_params.extension =
-          extensions::GetExtensionForUrl(browser_context, gurl);
+      create_params.extension = GetExtensionForUrl(browser_context, gurl);
     }
     if (create_params.extension) {
       if (create_params.extension_host_type ==
@@ -76,6 +101,7 @@ content::WebContents* CefBrowserPlatformDelegateAlloy::CreateWebContents(
       DCHECK(site_instance);
     }
   }
+#endif  // BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 
   content::WebContents::CreateParams wc_create_params(browser_context,
                                                       site_instance);
@@ -99,7 +125,7 @@ void CefBrowserPlatformDelegateAlloy::WebContentsCreated(
   CefBrowserPlatformDelegate::WebContentsCreated(web_contents, owned);
 
   if (primary_) {
-    find_in_page::FindTabHelper::CreateForWebContents(web_contents);
+    AttachHelpers(web_contents);
 
     if (owned) {
       SetOwnedWebContents(web_contents);
@@ -129,13 +155,16 @@ void CefBrowserPlatformDelegateAlloy::AddNewContents(
     return;
   }
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   if (extension_host_) {
     extension_host_->AddNewContents(source, std::move(new_contents), target_url,
                                     disposition, window_features, user_gesture,
                                     was_blocked);
   }
+#endif
 }
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 bool CefBrowserPlatformDelegateAlloy::
     ShouldAllowRendererInitiatedCrossProcessNavigation(
         bool is_main_frame_navigation) {
@@ -145,6 +174,7 @@ bool CefBrowserPlatformDelegateAlloy::
   }
   return true;
 }
+#endif
 
 void CefBrowserPlatformDelegateAlloy::RenderViewReady() {
   ConfigureAutoResize();
@@ -163,20 +193,14 @@ void CefBrowserPlatformDelegateAlloy::BrowserCreated(
   web_contents_->SetDelegate(
       AlloyBrowserHostImpl::FromBaseChecked(browser).get());
 
-  permissions::PermissionRequestManager::CreateForWebContents(web_contents_);
-  PrefsTabHelper::CreateForWebContents(web_contents_);
-  printing::InitializePrintingForWebContents(web_contents_);
-  zoom::ZoomController::CreateForWebContents(web_contents_);
-
-  javascript_dialogs::TabModalDialogManager::CreateForWebContents(
-      web_contents_,
-      CreateAlloyJavaScriptTabModalDialogManagerDelegateDesktop(web_contents_));
+  AttachHelpers(web_contents_);
 
   // Used for print preview and JavaScript dialogs.
   web_contents_dialog_helper_ =
       std::make_unique<AlloyWebContentsDialogHelper>(web_contents_, this);
 }
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 void CefBrowserPlatformDelegateAlloy::CreateExtensionHost(
     const extensions::Extension* extension,
     const GURL& url,
@@ -217,11 +241,14 @@ extensions::ExtensionHost* CefBrowserPlatformDelegateAlloy::GetExtensionHost()
     const {
   return extension_host_;
 }
+#endif  // BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 
 void CefBrowserPlatformDelegateAlloy::BrowserDestroyed(
     CefBrowserHostBase* browser) {
   if (primary_) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
     DestroyExtensionHost();
+#endif
     owned_web_contents_.reset();
   }
 
@@ -263,6 +290,7 @@ void CefBrowserPlatformDelegateAlloy::NotifyMoveOrResizeStarted() {
 }
 #endif
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 bool CefBrowserPlatformDelegateAlloy::PreHandleGestureEvent(
     content::WebContents* source,
     const blink::WebGestureEvent& event) {
@@ -279,6 +307,7 @@ bool CefBrowserPlatformDelegateAlloy::IsNeverComposited(
   }
   return false;
 }
+#endif  // BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 
 void CefBrowserPlatformDelegateAlloy::SetAutoResizeEnabled(
     bool enabled,
@@ -375,6 +404,7 @@ void CefBrowserPlatformDelegateAlloy::SetOwnedWebContents(
   owned_web_contents_.reset(owned_contents);
 }
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 void CefBrowserPlatformDelegateAlloy::DestroyExtensionHost() {
   if (!extension_host_) {
     return;
@@ -399,4 +429,52 @@ void CefBrowserPlatformDelegateAlloy::OnExtensionHostDeleted() {
   DCHECK(is_background_host_);
   DCHECK(extension_host_);
   extension_host_ = nullptr;
+}
+#endif  // BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+
+void CefBrowserPlatformDelegateAlloy::AttachHelpers(
+    content::WebContents* web_contents) {
+  // If already attached, nothing to be done.
+  base::SupportsUserData::Data* attached_tag =
+      web_contents->GetUserData(&kAttachedHelpersUserDataKey);
+  if (attached_tag) {
+    return;
+  }
+
+  // Mark as attached.
+  web_contents->SetUserData(&kAttachedHelpersUserDataKey,
+                            std::make_unique<base::SupportsUserData::Data>());
+
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+  // Create all the helpers.
+  if (cef::IsAlloyRuntimeEnabled()) {
+    find_in_page::FindTabHelper::CreateForWebContents(web_contents);
+    permissions::PermissionRequestManager::CreateForWebContents(web_contents);
+    PrefsTabHelper::CreateForWebContents(web_contents);
+    printing::InitializePrintingForWebContents(web_contents);
+    zoom::ZoomController::CreateForWebContents(web_contents);
+
+    javascript_dialogs::TabModalDialogManager::CreateForWebContents(
+        web_contents, CreateAlloyJavaScriptTabModalDialogManagerDelegateDesktop(
+                          web_contents));
+  } else
+#endif  // BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+  {
+    if (IsWindowless()) {
+      // Logic from ChromeContentBrowserClientCef::GetWebContentsViewDelegate
+      // which is not called for windowless browsers. Needs to be done before
+      // calling AttachTabHelpers.
+      if (auto* registry =
+              performance_manager::PerformanceManagerRegistry::GetInstance()) {
+        registry->MaybeCreatePageNodeForWebContents(web_contents);
+      }
+    }
+
+    // Adopt the WebContents now, so all observers are in place, as the network
+    // requests for its initial navigation will start immediately
+    TabHelpers::AttachTabHelpers(web_contents);
+
+    // Make the tab show up in the task manager.
+    task_manager::WebContentsTags::CreateForTabContents(web_contents);
+  }
 }

@@ -2,14 +2,13 @@
 // 2016 The Chromium Authors. All rights reserved. Use of this source code is
 // governed by a BSD-style license that can be found in the LICENSE file.
 
-#include "libcef/browser/permission_prompt.h"
-
-#include "libcef/browser/browser_host_base.h"
-#include "libcef/features/runtime.h"
+#include "cef/libcef/browser/permission_prompt.h"
 
 #include "base/logging.h"
 #include "base/memory/weak_ptr.h"
 #include "base/notreached.h"
+#include "cef/libcef/browser/browser_host_base.h"
+#include "cef/libcef/features/runtime.h"
 #include "chrome/browser/ui/permission_bubble/permission_prompt.h"
 
 namespace permission_prompt {
@@ -129,6 +128,10 @@ class CefPermissionPrompt : public permissions::PermissionPrompt {
     return std::nullopt;
   }
   bool ShouldFinalizeRequestAfterDecided() const override { return true; }
+  std::vector<permissions::ElementAnchoredBubbleVariant> GetPromptVariants()
+      const override {
+    return {};
+  }
 
  private:
   // We don't expose AcceptThisTime() because it's a special case for
@@ -250,7 +253,11 @@ std::unique_ptr<permissions::PermissionPrompt> CreatePermissionPromptImpl(
     bool* default_handling) {
   CEF_REQUIRE_UIT();
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   bool is_alloy_style = cef::IsAlloyRuntimeEnabled();
+#else
+  bool is_alloy_style = false;
+#endif
 
   if (auto browser = CefBrowserHostBase::GetBrowserForContents(web_contents)) {
     is_alloy_style = browser->IsAlloyStyle();

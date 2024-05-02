@@ -6,16 +6,15 @@
 #define CEF_LIBCEF_BROWSER_ALLOY_ALLOY_BROWSER_CONTEXT_H_
 #pragma once
 
-#include "include/cef_request_context_handler.h"
-#include "libcef/browser/alloy/chrome_profile_alloy.h"
-#include "libcef/browser/browser_context.h"
-#include "libcef/browser/request_context_handler_map.h"
-
+#include "cef/include/cef_request_context_handler.h"
+#include "cef/libcef/browser/alloy/chrome_profile_alloy.h"
+#include "cef/libcef/browser/browser_context.h"
+#include "cef/libcef/browser/request_context_handler_map.h"
 #include "chrome/browser/download/download_prefs.h"
 #include "components/proxy_config/pref_proxy_config_tracker.h"
 #include "components/visitedlink/browser/visitedlink_delegate.h"
 
-class CefDownloadManagerDelegate;
+class AlloyDownloadManagerDelegate;
 class CefSSLHostStateDelegate;
 class CefVisitedLinkListener;
 class PrefService;
@@ -110,6 +109,8 @@ class AlloyBrowserContext : public ChromeProfileAlloy,
 
   // visitedlink::VisitedLinkDelegate methods.
   void RebuildTable(const scoped_refptr<URLEnumerator>& enumerator) override;
+  void BuildVisitedLinkTable(
+      const scoped_refptr<VisitedLinkEnumerator>& enumerator) override;
 
   // Manages extensions.
   extensions::CefExtensionSystem* extension_system() const {
@@ -126,7 +127,7 @@ class AlloyBrowserContext : public ChromeProfileAlloy,
   std::unique_ptr<PrefService> pref_service_;
   std::unique_ptr<PrefProxyConfigTracker> pref_proxy_config_tracker_;
 
-  std::unique_ptr<CefDownloadManagerDelegate> download_manager_delegate_;
+  std::unique_ptr<AlloyDownloadManagerDelegate> download_manager_delegate_;
   std::unique_ptr<CefSSLHostStateDelegate> ssl_host_state_delegate_;
   std::unique_ptr<visitedlink::VisitedLinkWriter> visitedlink_master_;
   // |visitedlink_listener_| is owned by visitedlink_master_.

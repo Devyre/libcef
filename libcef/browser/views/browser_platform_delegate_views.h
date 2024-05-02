@@ -5,9 +5,9 @@
 #ifndef CEF_LIBCEF_BROWSER_VIEWS_BROWSER_PLATFORM_DELEGATE_VIEWS_H_
 #define CEF_LIBCEF_BROWSER_VIEWS_BROWSER_PLATFORM_DELEGATE_VIEWS_H_
 
-#include "libcef/browser/alloy/browser_platform_delegate_alloy.h"
-#include "libcef/browser/native/browser_platform_delegate_native.h"
-#include "libcef/browser/views/browser_view_impl.h"
+#include "cef/libcef/browser/alloy/browser_platform_delegate_alloy.h"
+#include "cef/libcef/browser/native/browser_platform_delegate_native.h"
+#include "cef/libcef/browser/views/browser_view_impl.h"
 
 // Implementation of Views-based browser functionality.
 class CefBrowserPlatformDelegateViews
@@ -47,7 +47,6 @@ class CefBrowserPlatformDelegateViews
   void SendMouseWheelEvent(const CefMouseEvent& event,
                            int deltaX,
                            int deltaY) override;
-  void SendMouseWheelEvent(const CefPlatformMouseEvent& event) override;
   void SendTouchEvent(const CefTouchEvent& event) override;
   void SetFocus(bool setFocus) override;
   gfx::Point GetScreenPoint(const gfx::Point& view,

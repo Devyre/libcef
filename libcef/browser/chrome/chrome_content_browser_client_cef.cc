@@ -3,36 +3,37 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/chrome/chrome_content_browser_client_cef.h"
+#include "cef/libcef/browser/chrome/chrome_content_browser_client_cef.h"
 
 #include <tuple>
 
-#include "libcef/browser/browser_frame.h"
-#include "libcef/browser/browser_host_base.h"
-#include "libcef/browser/browser_info_manager.h"
-#include "libcef/browser/browser_manager.h"
-#include "libcef/browser/certificate_query.h"
-#include "libcef/browser/chrome/chrome_browser_main_extra_parts_cef.h"
-#include "libcef/browser/context.h"
-#include "libcef/browser/net/chrome_scheme_handler.h"
-#include "libcef/browser/net/throttle_handler.h"
-#include "libcef/browser/net_service/cookie_manager_impl.h"
-#include "libcef/browser/net_service/login_delegate.h"
-#include "libcef/browser/net_service/proxy_url_loader_factory.h"
-#include "libcef/browser/net_service/resource_request_handler_wrapper.h"
-#include "libcef/browser/prefs/browser_prefs.h"
-#include "libcef/browser/prefs/renderer_prefs.h"
-#include "libcef/common/app_manager.h"
-#include "libcef/common/cef_switches.h"
-#include "libcef/common/command_line_impl.h"
-
 #include "base/command_line.h"
 #include "base/path_service.h"
+#include "cef/libcef/browser/browser_frame.h"
+#include "cef/libcef/browser/browser_host_base.h"
+#include "cef/libcef/browser/browser_info_manager.h"
+#include "cef/libcef/browser/browser_manager.h"
+#include "cef/libcef/browser/certificate_query.h"
+#include "cef/libcef/browser/chrome/chrome_browser_main_extra_parts_cef.h"
+#include "cef/libcef/browser/context.h"
+#include "cef/libcef/browser/net/chrome_scheme_handler.h"
+#include "cef/libcef/browser/net/throttle_handler.h"
+#include "cef/libcef/browser/net_service/cookie_manager_impl.h"
+#include "cef/libcef/browser/net_service/login_delegate.h"
+#include "cef/libcef/browser/net_service/proxy_url_loader_factory.h"
+#include "cef/libcef/browser/net_service/resource_request_handler_wrapper.h"
+#include "cef/libcef/browser/prefs/browser_prefs.h"
+#include "cef/libcef/browser/prefs/renderer_prefs.h"
+#include "cef/libcef/common/app_manager.h"
+#include "cef/libcef/common/cef_switches.h"
+#include "cef/libcef/common/command_line_impl.h"
+#include "cef/libcef/features/features.h"
 #include "chrome/browser/chrome_browser_main.h"
 #include "chrome/browser/net/system_network_context_manager.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/common/chrome_paths.h"
 #include "chrome/common/chrome_switches.h"
+#include "components/performance_manager/embedder/performance_manager_registry.h"
 #include "content/public/browser/navigation_throttle.h"
 #include "content/public/browser/render_process_host.h"
 #include "content/public/browser/render_view_host.h"
@@ -44,7 +45,7 @@
 #include "third_party/blink/public/mojom/loader/resource_load_info.mojom-shared.h"
 
 #if !BUILDFLAG(IS_MAC)
-#include "libcef/browser/chrome/chrome_web_contents_view_delegate_cef.h"
+#include "cef/libcef/browser/chrome/chrome_web_contents_view_delegate_cef.h"
 #endif
 
 namespace {
@@ -101,8 +102,10 @@ void ChromeContentBrowserClientCef::AppendExtraCommandLineSwitches(
   ChromeContentBrowserClient::AppendExtraCommandLineSwitches(command_line,
                                                              child_process_id);
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   // Necessary to launch sub-processes in the correct mode.
   command_line->AppendSwitch(switches::kEnableChromeRuntime);
+#endif
 
   // Necessary to populate DIR_USER_DATA in sub-processes.
   // See resource_util.cc GetUserDataPath.
@@ -236,6 +239,7 @@ void ChromeContentBrowserClientCef::WillCreateURLLoaderFactory(
     int render_process_id,
     URLLoaderFactoryType type,
     const url::Origin& request_initiator,
+    const net::IsolationInfo& isolation_info,
     std::optional<int64_t> navigation_id,
     ukm::SourceIdObj ukm_source_id,
     network::URLLoaderFactoryBuilder& factory_builder,
@@ -252,9 +256,9 @@ void ChromeContentBrowserClientCef::WillCreateURLLoaderFactory(
   if (!CefBrowserContext::FromProfile(profile)) {
     ChromeContentBrowserClient::WillCreateURLLoaderFactory(
         browser_context, frame, render_process_id, type, request_initiator,
-        navigation_id, ukm_source_id, factory_builder, header_client,
-        bypass_redirect_checks, disable_secure_dns, factory_override,
-        navigation_response_task_runner);
+        isolation_info, navigation_id, ukm_source_id, factory_builder,
+        header_client, bypass_redirect_checks, disable_secure_dns,
+        factory_override, navigation_response_task_runner);
     return;
   }
 
@@ -283,7 +287,7 @@ void ChromeContentBrowserClientCef::WillCreateURLLoaderFactory(
   // TODO(chrome): Is it necessary to proxy |header_client| callbacks?
   ChromeContentBrowserClient::WillCreateURLLoaderFactory(
       browser_context, frame, render_process_id, type, request_initiator,
-      navigation_id, ukm_source_id, factory_builder,
+      isolation_info, navigation_id, ukm_source_id, factory_builder,
       /*header_client=*/nullptr, bypass_redirect_checks, disable_secure_dns,
       handler_override, navigation_response_task_runner);
 
@@ -478,9 +482,13 @@ void ChromeContentBrowserClientCef::RegisterBrowserInterfaceBindersForFrame(
 std::unique_ptr<content::WebContentsViewDelegate>
 ChromeContentBrowserClientCef::GetWebContentsViewDelegate(
     content::WebContents* web_contents) {
-  // This does more work than just creating the delegate, so we call it even
-  // though the result gets discarded.
-  ChromeContentBrowserClient::GetWebContentsViewDelegate(web_contents);
+  // From ChromeContentBrowserClient::GetWebContentsViewDelegate. Windowless
+  // browsers don't call this method and use
+  // CefBrowserPlatformDelegateAlloy::AttachHelpers instead.
+  if (auto* registry =
+          performance_manager::PerformanceManagerRegistry::GetInstance()) {
+    registry->MaybeCreatePageNodeForWebContents(web_contents);
+  }
 
   // Used to customize context menu behavior for Alloy style. Called during
   // WebContents::Create() so we don't yet have an associated BrowserHost.

@@ -258,17 +258,17 @@ def GetRecommendedDefaultArgs():
     # https://groups.google.com/a/chromium.org/g/chromium-packagers/c/-2VGexQAK6w/m/5K5ppK9WBAAJ
     result['use_qt'] = False
 
-  if platform == 'mac':
-    # Disable the allocator shim. Default is True. See issue #3061.
-    result['use_allocator_shim'] = False
-
-  if platform == 'mac' or platform == 'linux':
     # Use the system allocator instead of PartitionAlloc. Default is True with
     # the allocator shim enabled. See issues #3061 and #3095.
     result['use_partition_alloc_as_malloc'] = False
 
-    # These require use_partition_alloc_as_malloc=true, so disable them.
+  if platform == 'linux' or platform == 'mac':
+    # Disable dangling pointer detector until raw_ptr<> is enabled (see #3239).
+    # https://chromium.googlesource.com/chromium/src/+/main/docs/dangling_ptr.md
+    # These also require use_partition_alloc_as_malloc=true.
     result['enable_backup_ref_ptr_support'] = False
+    result['enable_dangling_raw_ptr_checks'] = False
+    result['enable_dangling_raw_ptr_feature_flag'] = False
 
   return result
 
@@ -513,6 +513,8 @@ def GetConfigArgsSandbox(platform, args, is_debug, cpu):
 
       # These require use_partition_alloc_as_malloc=true, so disable them.
       'enable_backup_ref_ptr_support': False,
+      'enable_dangling_raw_ptr_checks': False,
+      'enable_dangling_raw_ptr_feature_flag': False,
 
       # Avoid /LTCG linker warnings and generate smaller lib files.
       'is_official_build': False,

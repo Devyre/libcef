@@ -3,14 +3,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/extensions/extension_system.h"
+#include "cef/libcef/browser/extensions/extension_system.h"
 
 #include <string>
-
-#include "libcef/browser/extension_impl.h"
-#include "libcef/browser/extensions/value_store/cef_value_store_factory.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/common/extensions/extensions_util.h"
 
 #include "base/command_line.h"
 #include "base/files/file_path.h"
@@ -21,6 +16,10 @@
 #include "base/strings/string_tokenizer.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/threading/thread_restrictions.h"
+#include "cef/libcef/browser/extension_impl.h"
+#include "cef/libcef/browser/extensions/value_store/cef_value_store_factory.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/common/extensions/extensions_util.h"
 #include "chrome/browser/pdf/pdf_extension_util.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/common/chrome_paths.h"
@@ -59,7 +58,7 @@ namespace {
 
 // Implementation based on ComponentLoader::ParseManifest.
 std::optional<base::Value::Dict> ParseManifest(
-    base::StringPiece manifest_contents) {
+    std::string_view manifest_contents) {
   JSONStringValueDeserializer deserializer(manifest_contents);
   std::unique_ptr<base::Value> manifest =
       deserializer.Deserialize(nullptr, nullptr);
@@ -209,8 +208,8 @@ void CefExtensionSystem::Init() {
   //    MimeHandlerViewGuest and CefMimeHandlerViewGuestDelegate in the browser
   //    process.
   // 11.MimeHandlerViewGuest::CreateWebContents creates a new guest WebContents
-  //    (is_guest_view=true) to host the PDF extension and the PDF resource
-  //    stream is retrieved via MimeHandlerStreamManager::ReleaseStream.
+  //    to host the PDF extension and the PDF resource stream is retrieved via
+  //    MimeHandlerStreamManager::ReleaseStream.
   // 12.MimeHandlerViewGuest::DidAttachToEmbedder calls
   //    CefMimeHandlerViewGuestDelegate::OnGuestAttached to associate the guest
   //    WebContents routing IDs with the owner CefBrowser. MimeHandlerViewGuest

@@ -39,6 +39,7 @@
 #pragma once
 
 #include <vector>
+
 #include "include/cef_base.h"
 #include "include/cef_devtools_message_observer.h"
 #include "include/cef_drag_data.h"
@@ -724,7 +725,6 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   virtual void SendMouseWheelEvent(const CefMouseEvent& event,
                                    int deltaX,
                                    int deltaY) = 0;
-  virtual void SendMouseWheelEvent(const CefPlatformMouseEvent& event) = 0;
 
   ///
   /// Send a touch event to the browser for a windowless browser.
@@ -945,6 +945,8 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   /// Returns the extension hosted in this browser or NULL if no extension is
   /// hosted. See CefRequestContext::LoadExtension for details.
   ///
+  /// WARNING: This method is deprecated and will be removed in ~M127.
+  ///
   /*--cef()--*/
   virtual CefRefPtr<CefExtension> GetExtension() = 0;
 
@@ -952,6 +954,8 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   /// Returns true if this browser is hosting an extension background script.
   /// Background hosts do not have a window and are not displayable. See
   /// CefRequestContext::LoadExtension for details.
+  ///
+  /// WARNING: This method is deprecated and will be removed in ~M127.
   ///
   /*--cef()--*/
   virtual bool IsBackgroundHost() = 0;

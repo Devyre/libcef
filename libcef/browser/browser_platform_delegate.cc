@@ -2,17 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/browser_platform_delegate.h"
-
-#include "include/views/cef_window.h"
-#include "include/views/cef_window_delegate.h"
-#include "libcef/browser/browser_host_base.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/browser/views/browser_view_impl.h"
-#include "libcef/common/cef_switches.h"
+#include "cef/libcef/browser/browser_platform_delegate.h"
 
 #include "base/command_line.h"
 #include "base/logging.h"
+#include "cef/include/views/cef_window.h"
+#include "cef/include/views/cef_window_delegate.h"
+#include "cef/libcef/browser/browser_host_base.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/browser/views/browser_view_impl.h"
+#include "cef/libcef/common/cef_switches.h"
 #include "chrome/browser/platform_util.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/shell_integration.h"
@@ -118,11 +117,13 @@ void CefBrowserPlatformDelegate::WebContentsDestroyed(
   web_contents_ = nullptr;
 }
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 bool CefBrowserPlatformDelegate::
     ShouldAllowRendererInitiatedCrossProcessNavigation(
         bool is_main_frame_navigation) {
   return true;
 }
+#endif
 
 void CefBrowserPlatformDelegate::RenderViewCreated(
     content::RenderViewHost* render_view_host) {
@@ -144,6 +145,7 @@ void CefBrowserPlatformDelegate::BrowserCreated(CefBrowserHostBase* browser) {
   browser_ = browser;
 }
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 void CefBrowserPlatformDelegate::CreateExtensionHost(
     const extensions::Extension* extension,
     const GURL& url,
@@ -156,6 +158,7 @@ extensions::ExtensionHost* CefBrowserPlatformDelegate::GetExtensionHost()
   DCHECK(false);
   return nullptr;
 }
+#endif
 
 void CefBrowserPlatformDelegate::NotifyBrowserCreated() {}
 
@@ -322,10 +325,6 @@ void CefBrowserPlatformDelegate::SendMouseWheelEvent(const CefMouseEvent& event,
   NOTIMPLEMENTED();
 }
 
-void CefBrowserPlatformDelegate::SendMouseWheelEvent(const CefPlatformMouseEvent& event) {
-  NOTIMPLEMENTED();
-}
-
 void CefBrowserPlatformDelegate::SendTouchEvent(const CefTouchEvent& event) {
   NOTIMPLEMENTED();
 }
@@ -359,6 +358,7 @@ bool CefBrowserPlatformDelegate::HandleKeyboardEvent(
   return false;
 }
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 bool CefBrowserPlatformDelegate::PreHandleGestureEvent(
     content::WebContents* source,
     const blink::WebGestureEvent& event) {
@@ -369,6 +369,7 @@ bool CefBrowserPlatformDelegate::IsNeverComposited(
     content::WebContents* web_contents) {
   return false;
 }
+#endif  // BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 
 // static
 void CefBrowserPlatformDelegate::HandleExternalProtocol(const GURL& url) {

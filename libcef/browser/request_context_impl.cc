@@ -2,18 +2,18 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "libcef/browser/request_context_impl.h"
-#include "libcef/browser/browser_context.h"
-#include "libcef/browser/context.h"
-#include "libcef/browser/prefs/pref_helper.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/common/app_manager.h"
-#include "libcef/common/task_runner_impl.h"
-#include "libcef/common/values_impl.h"
+#include "cef/libcef/browser/request_context_impl.h"
 
 #include "base/atomic_sequence_num.h"
 #include "base/logging.h"
 #include "base/strings/stringprintf.h"
+#include "cef/libcef/browser/browser_context.h"
+#include "cef/libcef/browser/context.h"
+#include "cef/libcef/browser/prefs/pref_helper.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/common/app_manager.h"
+#include "cef/libcef/common/task_runner_impl.h"
+#include "cef/libcef/common/values_impl.h"
 #include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/themes/theme_service.h"
@@ -490,6 +490,7 @@ void CefRequestContextImpl::LoadExtension(
     const CefString& root_directory,
     CefRefPtr<CefDictionaryValue> manifest,
     CefRefPtr<CefExtensionHandler> handler) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   GetBrowserContext(content::GetUIThreadTaskRunner({}),
                     base::BindOnce(
                         [](const CefString& root_directory,
@@ -505,20 +506,34 @@ void CefRequestContextImpl::LoadExtension(
                         },
                         root_directory, manifest, handler,
                         CefRefPtr<CefRequestContextImpl>(this)));
+#else
+  NOTIMPLEMENTED();
+#endif
 }
 
 bool CefRequestContextImpl::DidLoadExtension(const CefString& extension_id) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   CefRefPtr<CefExtension> extension = GetExtension(extension_id);
   // GetLoaderContext() will return NULL for internal extensions.
   return extension && IsSame(extension->GetLoaderContext());
+#else
+  NOTIMPLEMENTED();
+  return false;
+#endif
 }
 
 bool CefRequestContextImpl::HasExtension(const CefString& extension_id) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   return !!GetExtension(extension_id);
+#else
+  NOTIMPLEMENTED();
+  return false;
+#endif
 }
 
 bool CefRequestContextImpl::GetExtensions(
     std::vector<CefString>& extension_ids) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   extension_ids.clear();
 
   if (!VerifyBrowserContext()) {
@@ -526,15 +541,24 @@ bool CefRequestContextImpl::GetExtensions(
   }
 
   return browser_context()->GetExtensions(extension_ids);
+#else
+  NOTIMPLEMENTED();
+  return false;
+#endif
 }
 
 CefRefPtr<CefExtension> CefRequestContextImpl::GetExtension(
     const CefString& extension_id) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   if (!VerifyBrowserContext()) {
     return nullptr;
   }
 
   return browser_context()->GetExtension(extension_id);
+#else
+  NOTIMPLEMENTED();
+  return nullptr;
+#endif
 }
 
 CefRefPtr<CefMediaRouter> CefRequestContextImpl::GetMediaRouter(
@@ -702,18 +726,14 @@ cef_color_variant_t CefRequestContextImpl::GetChromeColorSchemeVariant() {
 
 void CefRequestContextImpl::OnRenderFrameCreated(
     const content::GlobalRenderFrameHostId& global_id,
-    bool is_main_frame,
-    bool is_guest_view) {
-  browser_context_->OnRenderFrameCreated(this, global_id, is_main_frame,
-                                         is_guest_view);
+    bool is_main_frame) {
+  browser_context_->OnRenderFrameCreated(this, global_id, is_main_frame);
 }
 
 void CefRequestContextImpl::OnRenderFrameDeleted(
     const content::GlobalRenderFrameHostId& global_id,
-    bool is_main_frame,
-    bool is_guest_view) {
-  browser_context_->OnRenderFrameDeleted(this, global_id, is_main_frame,
-                                         is_guest_view);
+    bool is_main_frame) {
+  browser_context_->OnRenderFrameDeleted(this, global_id, is_main_frame);
 }
 
 // static

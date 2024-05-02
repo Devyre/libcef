@@ -334,7 +334,6 @@ class CefMouseEvent : public cef_mouse_event_t {
   CefMouseEvent() : cef_mouse_event_t{} {}
   CefMouseEvent(const cef_mouse_event_t& r) : cef_mouse_event_t(r) {}
 };
-using CefPlatformMouseEvent = cef_platform_mouse_event_t;
 
 ///
 /// Class representing a touch event.
@@ -388,7 +387,9 @@ struct CefSettingsTraits {
                    &target->framework_dir_path, copy);
     cef_string_set(src->main_bundle_path.str, src->main_bundle_path.length,
                    &target->main_bundle_path, copy);
+#if !defined(DISABLE_ALLOY_BOOTSTRAP)
     target->chrome_runtime = src->chrome_runtime;
+#endif
     target->multi_threaded_message_loop = src->multi_threaded_message_loop;
     target->external_message_pump = src->external_message_pump;
     target->windowless_rendering_enabled = src->windowless_rendering_enabled;

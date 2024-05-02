@@ -4,12 +4,11 @@
 
 #include <algorithm>
 
-#include "include/internal/cef_string_types.h"
-
 #include "base/i18n/case_conversion.h"
 #include "base/logging.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
+#include "cef/include/internal/cef_string_types.h"
 
 namespace {
 
@@ -26,7 +25,7 @@ void string_utf16_dtor(char16_t* str) {
 }
 
 // Originally from base/strings/utf_string_conversions.cc
-std::wstring ASCIIToWide(const base::StringPiece& ascii) {
+std::wstring ASCIIToWide(const std::string_view& ascii) {
   DCHECK(base::IsStringASCII(ascii)) << ascii;
   return std::wstring(ascii.begin(), ascii.end());
 }

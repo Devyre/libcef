@@ -2,6 +2,8 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
+#include "cef/libcef/common/request_impl.h"
+
 #include <algorithm>
 #include <limits>
 #include <memory>
@@ -9,15 +11,13 @@
 #include <utility>
 #include <vector>
 
-#include "libcef/common/net/http_header_utils.h"
-#include "libcef/common/net_service/net_service_util.h"
-#include "libcef/common/request_impl.h"
-
 #include "base/command_line.h"
 #include "base/logging.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
+#include "cef/libcef/common/net/http_header_utils.h"
+#include "cef/libcef/common/net_service/net_service_util.h"
 #include "content/public/browser/browser_thread.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/common/content_switches.h"
@@ -80,7 +80,7 @@ int GetCacheControlHeaderPolicy(CefRequest::HeaderMap headerMap) {
   if (!line.empty()) {
     HttpHeaderUtils::MakeASCIILower(&line);
 
-    std::vector<base::StringPiece> pieces = base::SplitStringPiece(
+    std::vector<std::string_view> pieces = base::SplitStringPiece(
         line, ",", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
     for (const auto& piece : pieces) {
       if (base::EqualsCaseInsensitiveASCII(piece,

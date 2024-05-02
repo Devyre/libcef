@@ -2,23 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/browser_host_base.h"
+#include "cef/libcef/browser/browser_host_base.h"
 
 #include <tuple>
 
-#include "libcef/browser/browser_info_manager.h"
-#include "libcef/browser/browser_platform_delegate.h"
-#include "libcef/browser/context.h"
-#include "libcef/browser/extensions/browser_extensions_util.h"
-#include "libcef/browser/hang_monitor.h"
-#include "libcef/browser/image_impl.h"
-#include "libcef/browser/navigation_entry_impl.h"
-#include "libcef/browser/printing/print_util.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/common/frame_util.h"
-#include "libcef/common/net/url_util.h"
-
 #include "base/logging.h"
+#include "cef/libcef/browser/browser_info_manager.h"
+#include "cef/libcef/browser/browser_platform_delegate.h"
+#include "cef/libcef/browser/context.h"
+#include "cef/libcef/browser/extensions/browser_extensions_util.h"
+#include "cef/libcef/browser/hang_monitor.h"
+#include "cef/libcef/browser/image_impl.h"
+#include "cef/libcef/browser/navigation_entry_impl.h"
+#include "cef/libcef/browser/printing/print_util.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/common/frame_util.h"
+#include "cef/libcef/common/net/url_util.h"
 #include "chrome/browser/platform_util.h"
 #include "chrome/browser/spellchecker/spellcheck_factory.h"
 #include "chrome/browser/spellchecker/spellcheck_service.h"
@@ -126,9 +125,9 @@ CefRefPtr<CefBrowserHostBase> CefBrowserHostBase::GetBrowserForContents(
     return browser;
   }
 
-  // Try the owner WebContents if |contents| originates from a guest view such
-  // as the PDF viewer or Print Preview.
-  // This is safe to call even if Alloy extensions are disabled.
+  // Try the owner WebContents if |contents| originates from an excluded view
+  // such as the PDF viewer or Print Preview. This is safe to call even if Alloy
+  // extensions are disabled.
   if (auto* owner_contents = extensions::GetOwnerForGuestContents(contents)) {
     return WebContentsUserDataAdapter::Get(owner_contents);
   }
@@ -153,8 +152,7 @@ CefRefPtr<CefBrowserHostBase> CefBrowserHostBase::GetBrowserForGlobalId(
     return GetBrowserForHost(render_frame_host);
   } else {
     // Use the thread-safe approach.
-    auto info = CefBrowserInfoManager::GetInstance()->GetBrowserInfo(global_id,
-                                                                     nullptr);
+    auto info = CefBrowserInfoManager::GetInstance()->GetBrowserInfo(global_id);
     if (info) {
       auto browser = info->browser();
       if (!browser) {
@@ -185,8 +183,8 @@ CefRefPtr<CefBrowserHostBase> CefBrowserHostBase::GetBrowserForGlobalToken(
     return GetBrowserForHost(render_frame_host);
   } else {
     // Use the thread-safe approach.
-    auto info = CefBrowserInfoManager::GetInstance()->GetBrowserInfo(
-        global_token, nullptr);
+    auto info =
+        CefBrowserInfoManager::GetInstance()->GetBrowserInfo(global_token);
     if (info) {
       auto browser = info->browser();
       if (!browser) {
@@ -732,6 +730,15 @@ void CefBrowserHostBase::NotifyMoveOrResizeStarted() {
 #endif
 }
 
+CefRefPtr<CefExtension> CefBrowserHostBase::GetExtension() {
+  NOTIMPLEMENTED();
+  return nullptr;
+}
+
+bool CefBrowserHostBase::IsBackgroundHost() {
+  return false;
+}
+
 bool CefBrowserHostBase::IsFullscreen() {
   if (!CEF_CURRENTLY_ON_UIT()) {
     DCHECK(false) << "called on invalid thread";
@@ -906,33 +913,14 @@ void CefBrowserHostBase::SendMouseWheelEvent(const CefMouseEvent& event,
   }
 
   if (!CEF_CURRENTLY_ON_UIT()) {
-    using TSendMouseWheelEvent = void(CefBrowserHostBase::*)(const CefMouseEvent&, int, int);
     CEF_POST_TASK(CEF_UIT,
-        base::BindOnce((TSendMouseWheelEvent)&CefBrowserHostBase::SendMouseWheelEvent,
-                                 this,
+                  base::BindOnce(&CefBrowserHostBase::SendMouseWheelEvent, this,
                                  event, deltaX, deltaY));
     return;
   }
 
   if (platform_delegate_) {
     platform_delegate_->SendMouseWheelEvent(event, deltaX, deltaY);
-  }
-}
-
-void CefBrowserHostBase::SendMouseWheelEvent(const CefPlatformMouseEvent& event) {
-  if (!CEF_CURRENTLY_ON_UIT()) {
-    using TSendMouseWheelEvent =
-        void (CefBrowserHostBase::*)(const CefPlatformMouseEvent&);
-    CEF_POST_TASK(
-        CEF_UIT,
-        base::BindOnce(
-            (TSendMouseWheelEvent)&CefBrowserHostBase::SendMouseWheelEvent,
-            this, event));
-    return;
-  }
-
-  if (platform_delegate_) {
-    platform_delegate_->SendMouseWheelEvent(event);
   }
 }
 
@@ -1176,24 +1164,23 @@ void CefBrowserHostBase::OnWebContentsDestroyed(
     content::WebContents* web_contents) {}
 
 CefRefPtr<CefFrame> CefBrowserHostBase::GetFrameForHost(
-    const content::RenderFrameHost* host,
-    bool* is_guest_view) {
+    const content::RenderFrameHost* host) {
   CEF_REQUIRE_UIT();
   if (!host) {
     return nullptr;
   }
 
-  return browser_info_->GetFrameForHost(host, is_guest_view);
+  return browser_info_->GetFrameForHost(host);
 }
 
 CefRefPtr<CefFrame> CefBrowserHostBase::GetFrameForGlobalId(
     const content::GlobalRenderFrameHostId& global_id) {
-  return browser_info_->GetFrameForGlobalId(global_id, nullptr);
+  return browser_info_->GetFrameForGlobalId(global_id);
 }
 
 CefRefPtr<CefFrame> CefBrowserHostBase::GetFrameForGlobalToken(
     const content::GlobalRenderFrameHostToken& global_token) {
-  return browser_info_->GetFrameForGlobalToken(global_token, nullptr);
+  return browser_info_->GetFrameForGlobalToken(global_token);
 }
 
 void CefBrowserHostBase::AddObserver(Observer* observer) {

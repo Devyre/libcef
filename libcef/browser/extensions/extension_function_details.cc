@@ -2,17 +2,18 @@
 // 2014 The Chromium Authors. All rights reserved. Use of this source code is
 // governed by a BSD-style license that can be found in the LICENSE file.
 
-#include "libcef/browser/extensions/extension_function_details.h"
+#include "cef/libcef/browser/extensions/extension_function_details.h"
 
 #include <memory>
 
-#include "libcef/browser/browser_context.h"
-#include "libcef/browser/extensions/browser_extensions_util.h"
-#include "libcef/browser/extensions/extension_system.h"
-#include "libcef/browser/thread_util.h"
-
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/thread_pool.h"
+#include "cef/libcef/browser/alloy/alloy_browser_host_impl.h"
+#include "cef/libcef/browser/browser_context.h"
+#include "cef/libcef/browser/browser_info_manager.h"
+#include "cef/libcef/browser/extensions/browser_extensions_util.h"
+#include "cef/libcef/browser/extensions/extension_system.h"
+#include "cef/libcef/browser/thread_util.h"
 #include "chrome/browser/extensions/api/tabs/tabs_constants.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
 #include "chrome/browser/profiles/profile.h"
@@ -134,6 +135,39 @@ class CefGetExtensionLoadFileCallbackImpl
 
   IMPLEMENT_REFCOUNTING(CefGetExtensionLoadFileCallbackImpl);
 };
+
+CefRefPtr<AlloyBrowserHostImpl> GetBrowserForTabId(
+    int tab_id,
+    content::BrowserContext* browser_context) {
+  CEF_REQUIRE_UIT();
+  DCHECK(browser_context);
+  if (tab_id < 0 || !browser_context) {
+    return nullptr;
+  }
+
+  auto cef_browser_context =
+      CefBrowserContext::FromBrowserContext(browser_context);
+
+  for (const auto& browser_info :
+       CefBrowserInfoManager::GetInstance()->GetBrowserInfoList()) {
+    auto current_browser =
+        AlloyBrowserHostImpl::FromBaseChecked(browser_info->browser());
+    if (current_browser && current_browser->GetIdentifier() == tab_id) {
+      // Make sure we're operating in the same CefBrowserContext.
+      if (CefBrowserContext::FromBrowserContext(
+              current_browser->GetBrowserContext()) == cef_browser_context) {
+        return current_browser;
+      } else {
+        LOG(WARNING) << "Browser with tabId " << tab_id
+                     << " cannot be accessed because is uses a different "
+                        "CefRequestContext";
+        break;
+      }
+    }
+  }
+
+  return nullptr;
+}
 
 }  // namespace
 

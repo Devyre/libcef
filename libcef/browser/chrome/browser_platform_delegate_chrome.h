@@ -5,8 +5,8 @@
 #ifndef CEF_LIBCEF_BROWSER_CHROME_BROWSER_PLATFORM_DELEGATE_CHROME_H_
 #define CEF_LIBCEF_BROWSER_CHROME_BROWSER_PLATFORM_DELEGATE_CHROME_H_
 
-#include "libcef/browser/browser_platform_delegate.h"
-#include "libcef/browser/native/browser_platform_delegate_native.h"
+#include "cef/libcef/browser/browser_platform_delegate.h"
+#include "cef/libcef/browser/native/browser_platform_delegate_native.h"
 
 class Browser;
 
@@ -39,7 +39,6 @@ class CefBrowserPlatformDelegateChrome
   void SendMouseWheelEvent(const CefMouseEvent& event,
                            int deltaX,
                            int deltaY) override;
-  void SendMouseWheelEvent(const CefPlatformMouseEvent& event) override;
   gfx::Point GetScreenPoint(const gfx::Point& view,
                             bool want_dip_coords) const override;
   void ViewText(const std::string& text) override;

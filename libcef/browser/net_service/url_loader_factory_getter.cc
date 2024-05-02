@@ -3,12 +3,11 @@
 // source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
 
-#include "libcef/browser/net_service/url_loader_factory_getter.h"
-
-#include "libcef/browser/thread_util.h"
-#include "libcef/common/app_manager.h"
+#include "cef/libcef/browser/net_service/url_loader_factory_getter.h"
 
 #include "base/task/single_thread_task_runner.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/common/app_manager.h"
 #include "content/browser/devtools/devtools_instrumentation.h"
 #include "content/browser/renderer_host/render_frame_host_impl.h"
 #include "content/public/browser/browser_context.h"
@@ -45,8 +44,8 @@ scoped_refptr<URLLoaderFactoryGetter> URLLoaderFactoryGetter::Create(
     // Allow DevTools to potentially inject itself into the proxy pipe.
     content::devtools_instrumentation::WillCreateURLLoaderFactoryParams::
         ForFrame(static_cast<content::RenderFrameHostImpl*>(render_frame_host))
-            .Run(false /* is_navigation */, false /* is_download */,
-                 factory_builder, nullptr /* factory_override */);
+            .Run(/*is_navigation=*/false, /*is_download=*/false,
+                 factory_builder, /*factory_override=*/nullptr);
   }
 
   auto browser_client = CefAppManager::Get()->GetContentClient()->browser();
@@ -55,11 +54,11 @@ scoped_refptr<URLLoaderFactoryGetter> URLLoaderFactoryGetter::Create(
   browser_client->WillCreateURLLoaderFactory(
       browser_context, render_frame_host, render_process_id,
       content::ContentBrowserClient::URLLoaderFactoryType::kDocumentSubResource,
-      url::Origin(), std::nullopt /* navigation_id */, ukm::SourceIdObj(),
-      factory_builder, nullptr /* header_client */,
-      nullptr /* bypass_redirect_checks */, nullptr /* disable_secure_dns */,
-      nullptr /* factory_override */,
-      nullptr /* navigation_response_task_runner */);
+      url::Origin(), net::IsolationInfo(), /*navigation_id=*/std::nullopt,
+      ukm::SourceIdObj(), factory_builder, /*header_client=*/nullptr,
+      /*bypass_redirect_checks=*/nullptr, /*disable_secure_dns=*/nullptr,
+      /*factory_override=*/nullptr,
+      /*navigation_response_task_runner=*/nullptr);
 
   return base::WrapRefCounted(new URLLoaderFactoryGetter(
       loader_factory->Clone(), std::move(factory_builder)));

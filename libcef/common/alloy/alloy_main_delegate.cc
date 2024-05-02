@@ -2,19 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/common/alloy/alloy_main_delegate.h"
+#include "cef/libcef/common/alloy/alloy_main_delegate.h"
 
 #include <memory>
 #include <tuple>
-
-#include "libcef/browser/alloy/alloy_browser_context.h"
-#include "libcef/browser/alloy/alloy_content_browser_client.h"
-#include "libcef/common/cef_switches.h"
-#include "libcef/common/command_line_impl.h"
-#include "libcef/common/crash_reporting.h"
-#include "libcef/common/extensions/extensions_util.h"
-#include "libcef/common/resource_util.h"
-#include "libcef/renderer/alloy/alloy_content_renderer_client.h"
 
 #include "base/base_switches.h"
 #include "base/command_line.h"
@@ -28,6 +19,14 @@
 #include "base/strings/sys_string_conversions.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/synchronization/waitable_event.h"
+#include "cef/libcef/browser/alloy/alloy_browser_context.h"
+#include "cef/libcef/browser/alloy/alloy_content_browser_client.h"
+#include "cef/libcef/common/cef_switches.h"
+#include "cef/libcef/common/command_line_impl.h"
+#include "cef/libcef/common/crash_reporting.h"
+#include "cef/libcef/common/extensions/extensions_util.h"
+#include "cef/libcef/common/resource_util.h"
+#include "cef/libcef/renderer/alloy/alloy_content_renderer_client.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/chrome_process_singleton.h"
 #include "chrome/child/pdf_child_init.h"
@@ -60,10 +59,10 @@
 #include "ui/base/ui_base_switches.h"
 
 #if BUILDFLAG(IS_MAC)
+#include "cef/libcef/common/util_mac.h"
 #include "components/crash/core/common/objc_zombie.h"
-#include "libcef/common/util_mac.h"
 #elif BUILDFLAG(IS_POSIX)
-#include "libcef/common/util_linux.h"
+#include "cef/libcef/common/util_linux.h"
 #endif
 
 #if BUILDFLAG(IS_WIN)
@@ -299,7 +298,7 @@ std::optional<int> AlloyMainDelegate::BasicStartupComplete() {
       if (settings_->log_items == LOG_ITEMS_NONE) {
         log_items_str = std::string(switches::kLogItems_None);
       } else {
-        std::vector<base::StringPiece> added_items;
+        std::vector<std::string_view> added_items;
         if (settings_->log_items & LOG_ITEMS_FLAG_PROCESS_ID) {
           added_items.emplace_back(switches::kLogItems_PId);
         }
@@ -472,9 +471,7 @@ std::optional<int> AlloyMainDelegate::BasicStartupComplete() {
 #endif  // BUILDFLAG(IS_WIN)
 
   if (dest == LoggingDest::kFile) {
-    log_settings.log_file_path = log_file.value().c_str();
-  } else {
-    log_settings.log_file_path = nullptr;
+    log_settings.log_file_path = log_file.value();
   }
 
   log_settings.lock_log = logging::DONT_LOCK_LOG_FILE;

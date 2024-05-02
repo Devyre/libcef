@@ -15,14 +15,12 @@
 #endif
 #endif
 
-#include "libcef/renderer/render_frame_observer.h"
-
-#include "libcef/common/app_manager.h"
-#include "libcef/renderer/blink_glue.h"
-#include "libcef/renderer/browser_impl.h"
-#include "libcef/renderer/dom_document_impl.h"
-#include "libcef/renderer/v8_impl.h"
-
+#include "cef/libcef/common/app_manager.h"
+#include "cef/libcef/renderer/blink_glue.h"
+#include "cef/libcef/renderer/browser_impl.h"
+#include "cef/libcef/renderer/dom_document_impl.h"
+#include "cef/libcef/renderer/render_frame_observer.h"
+#include "cef/libcef/renderer/v8_impl.h"
 #include "content/public/renderer/render_frame.h"
 #include "third_party/blink/public/web/blink.h"
 #include "third_party/blink/public/web/web_document.h"
@@ -118,12 +116,6 @@ void CefRenderFrameObserver::FocusedElementChanged(
   documentImpl->Detach();
 }
 
-void CefRenderFrameObserver::DraggableRegionsChanged() {
-  if (frame_) {
-    frame_->OnDraggableRegionsChanged();
-  }
-}
-
 void CefRenderFrameObserver::DidCreateScriptContext(
     v8::Handle<v8::Context> context,
     int world_id) {
@@ -201,18 +193,6 @@ void CefRenderFrameObserver::WillReleaseScriptContext(
 
 void CefRenderFrameObserver::OnDestruct() {
   delete this;
-}
-
-void CefRenderFrameObserver::OnInterfaceRequestForFrame(
-    const std::string& interface_name,
-    mojo::ScopedMessagePipeHandle* interface_pipe) {
-  registry_.TryBindInterface(interface_name, interface_pipe);
-}
-
-bool CefRenderFrameObserver::OnAssociatedInterfaceRequestForFrame(
-    const std::string& interface_name,
-    mojo::ScopedInterfaceEndpointHandle* handle) {
-  return associated_interfaces_.TryBindInterface(interface_name, handle);
 }
 
 void CefRenderFrameObserver::AttachFrame(CefFrameImpl* frame) {

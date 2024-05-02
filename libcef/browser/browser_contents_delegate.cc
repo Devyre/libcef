@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/browser_contents_delegate.h"
+#include "cef/libcef/browser/browser_contents_delegate.h"
 
-#include "libcef/browser/browser_host_base.h"
-#include "libcef/browser/browser_platform_delegate.h"
-#include "libcef/browser/browser_util.h"
-#include "libcef/browser/native/cursor_util.h"
-#include "libcef/common/frame_util.h"
-
+#include "cef/libcef/browser/browser_host_base.h"
+#include "cef/libcef/browser/browser_platform_delegate.h"
+#include "cef/libcef/browser/browser_util.h"
+#include "cef/libcef/browser/native/cursor_util.h"
+#include "cef/libcef/common/frame_util.h"
 #include "chrome/browser/ui/views/sad_tab_view.h"
 #include "chrome/common/chrome_result_codes.h"
 #include "content/browser/renderer_host/render_widget_host_impl.h"
@@ -25,6 +24,7 @@
 #include "services/network/public/mojom/url_response_head.mojom.h"
 #include "third_party/blink/public/mojom/favicon/favicon_url.mojom.h"
 #include "third_party/blink/public/mojom/input/focus_type.mojom-blink.h"
+#include "third_party/blink/public/mojom/page/draggable_region.mojom.h"
 #include "third_party/blink/public/mojom/widget/platform_widget.mojom-test-utils.h"
 
 #if defined(OS_WIN)
@@ -93,8 +93,7 @@ void CefBrowserContentsDelegate::ObserveWebContents(
     // Make sure MaybeCreateFrame is called at least one time.
     // Create the frame representation before OnAfterCreated is called for a new
     // browser.
-    browser_info_->MaybeCreateFrame(new_contents->GetPrimaryMainFrame(),
-                                    false /* is_guest_view */);
+    browser_info_->MaybeCreateFrame(new_contents->GetPrimaryMainFrame());
 
     // Make sure RenderWidgetCreated is called at least one time. This Observer
     // is registered too late to catch the initial creation.
@@ -112,9 +111,11 @@ void CefBrowserContentsDelegate::RemoveObserver(Observer* observer) {
 
 // |source| may be NULL for navigations in the current tab, or if the
 // navigation originates from a guest view via MaybeAllowNavigation.
-content::WebContents* CefBrowserContentsDelegate::OpenURLFromTab(
+content::WebContents* CefBrowserContentsDelegate::OpenURLFromTabEx(
     content::WebContents* source,
-    const content::OpenURLParams& params) {
+    const content::OpenURLParams& params,
+    base::OnceCallback<void(content::NavigationHandle&)>&
+        navigation_handle_callback) {
   bool cancel = false;
 
   if (auto c = client()) {
@@ -133,8 +134,13 @@ content::WebContents* CefBrowserContentsDelegate::OpenURLFromTab(
     }
   }
 
+  if (!cancel) {
+    // TODO: Do something with |navigation_handle_callback|.
+    return web_contents();
+  }
+
   // Returning nullptr will cancel the navigation.
-  return cancel ? nullptr : web_contents();
+  return nullptr;
 }
 
 void CefBrowserContentsDelegate::LoadingStateChanged(
@@ -228,11 +234,9 @@ void CefBrowserContentsDelegate::CanDownload(
     base::OnceCallback<void(bool)> callback) {
   bool allow = true;
 
-  if (auto delegate = platform_delegate()) {
-    if (auto c = client()) {
-      if (auto handler = c->GetDownloadHandler()) {
-        allow = handler->CanDownload(browser(), url.spec(), request_method);
-      }
+  if (auto c = client()) {
+    if (auto handler = c->GetDownloadHandler()) {
+      allow = handler->CanDownload(browser(), url.spec(), request_method);
     }
   }
 
@@ -294,9 +298,26 @@ bool CefBrowserContentsDelegate::HandleKeyboardEvent(
   return false;
 }
 
+void CefBrowserContentsDelegate::DraggableRegionsChanged(
+    const std::vector<blink::mojom::DraggableRegionPtr>& regions,
+    content::WebContents* contents) {
+  // Already converted to window bounds in WebViewImpl::DraggableRegionsChanged.
+  std::vector<cef::mojom::DraggableRegionEntryPtr> cef_regions;
+  if (!regions.empty()) {
+    cef_regions.reserve(regions.size());
+    for (const auto& region : regions) {
+      auto cef_region = cef::mojom::DraggableRegionEntry::New(
+          region->bounds, region->draggable);
+      cef_regions.emplace_back(std::move(cef_region));
+    }
+  }
+
+  browser_info_->GetMainFrame()->UpdateDraggableRegions(std::move(cef_regions));
+}
+
 void CefBrowserContentsDelegate::RenderFrameCreated(
     content::RenderFrameHost* render_frame_host) {
-  browser_info_->MaybeCreateFrame(render_frame_host, false /* is_guest_view */);
+  browser_info_->MaybeCreateFrame(render_frame_host);
   if (render_frame_host->GetParent() == nullptr) {
     auto render_view_host = render_frame_host->GetRenderViewHost();
     auto base_background_color = platform_delegate()->GetBackgroundColor();
@@ -546,6 +567,10 @@ void CefBrowserContentsDelegate::DidFinishLoad(
     content::RenderFrameHost* render_frame_host,
     const GURL& validated_url) {
   auto frame = browser_info_->GetFrameForHost(render_frame_host);
+  if (!frame) {
+    return;
+  }
+
   frame->RefreshAttributes();
 
   int http_status_code = 0;

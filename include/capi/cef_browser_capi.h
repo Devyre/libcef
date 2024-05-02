@@ -33,7 +33,7 @@
 // by hand. See the translator.README.txt file in the tools directory for
 // more information.
 //
-// $hash=7733ed87ade32dfd311c24c51263d20b9b469868$
+// $hash=6ee74f31d37a1b5ab3c9c5ccbe2dce9841329b38$
 //
 
 #ifndef CEF_INCLUDE_CAPI_CEF_BROWSER_CAPI_H_
@@ -693,8 +693,6 @@ typedef struct _cef_browser_host_t {
                                              const cef_mouse_event_t* event,
                                              int deltaX,
                                              int deltaY);
-  void(CEF_CALLBACK* send_platform_mouse_wheel_event)(struct _cef_browser_host_t* self,
-                                             const cef_platform_mouse_event_t event);
 
   ///
   /// Send a touch event to the browser for a windowless browser.
@@ -917,6 +915,8 @@ typedef struct _cef_browser_host_t {
   /// Returns the extension hosted in this browser or NULL if no extension is
   /// hosted. See cef_request_context_t::LoadExtension for details.
   ///
+  /// WARNING: This function is deprecated and will be removed in ~M127.
+  ///
   struct _cef_extension_t*(CEF_CALLBACK* get_extension)(
       struct _cef_browser_host_t* self);
 
@@ -924,6 +924,8 @@ typedef struct _cef_browser_host_t {
   /// Returns true (1) if this browser is hosting an extension background
   /// script. Background hosts do not have a window and are not displayable. See
   /// cef_request_context_t::LoadExtension for details.
+  ///
+  /// WARNING: This function is deprecated and will be removed in ~M127.
   ///
   int(CEF_CALLBACK* is_background_host)(struct _cef_browser_host_t* self);
 

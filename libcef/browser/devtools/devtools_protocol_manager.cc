@@ -2,12 +2,11 @@
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
-#include "libcef/browser/devtools/devtools_protocol_manager.h"
+#include "cef/libcef/browser/devtools/devtools_protocol_manager.h"
 
-#include "libcef/browser/browser_host_base.h"
-#include "libcef/browser/devtools/devtools_controller.h"
-#include "libcef/browser/thread_util.h"
-
+#include "cef/libcef/browser/browser_host_base.h"
+#include "cef/libcef/browser/devtools/devtools_controller.h"
+#include "cef/libcef/browser/thread_util.h"
 #include "content/public/browser/web_contents.h"
 
 namespace {
@@ -50,7 +49,7 @@ class CefDevToolsRegistrationImpl : public CefRegistration,
 
  private:
   // CefDevToolsController::Observer methods:
-  bool OnDevToolsMessage(const base::StringPiece& message) override {
+  bool OnDevToolsMessage(const std::string_view& message) override {
     CEF_REQUIRE_UIT();
     return observer_->OnDevToolsMessage(browser_, message.data(),
                                         message.size());
@@ -58,14 +57,14 @@ class CefDevToolsRegistrationImpl : public CefRegistration,
 
   void OnDevToolsMethodResult(int message_id,
                               bool success,
-                              const base::StringPiece& result) override {
+                              const std::string_view& result) override {
     CEF_REQUIRE_UIT();
     observer_->OnDevToolsMethodResult(browser_, message_id, success,
                                       result.data(), result.size());
   }
 
-  void OnDevToolsEvent(const base::StringPiece& method,
-                       const base::StringPiece& params) override {
+  void OnDevToolsEvent(const std::string_view& method,
+                       const std::string_view& params) override {
     CEF_REQUIRE_UIT();
     observer_->OnDevToolsEvent(browser_, std::string(method), params.data(),
                                params.size());
@@ -119,7 +118,7 @@ bool CefDevToolsProtocolManager::SendDevToolsMessage(const void* message,
   }
 
   return devtools_controller_->SendDevToolsMessage(
-      base::StringPiece(static_cast<const char*>(message), message_size));
+      std::string_view(static_cast<const char*>(message), message_size));
 }
 
 int CefDevToolsProtocolManager::ExecuteDevToolsMethod(

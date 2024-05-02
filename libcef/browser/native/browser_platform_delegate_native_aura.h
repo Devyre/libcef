@@ -5,9 +5,8 @@
 #ifndef CEF_LIBCEF_BROWSER_NATIVE_BROWSER_PLATFORM_DELEGATE_NATIVE_AURA_H_
 #define CEF_LIBCEF_BROWSER_NATIVE_BROWSER_PLATFORM_DELEGATE_NATIVE_AURA_H_
 
-#include "libcef/browser/native/browser_platform_delegate_native.h"
-
 #include "base/memory/weak_ptr.h"
+#include "cef/libcef/browser/native/browser_platform_delegate_native.h"
 #include "ui/events/event.h"
 
 namespace content {
@@ -37,7 +36,6 @@ class CefBrowserPlatformDelegateNativeAura
   void SendMouseWheelEvent(const CefMouseEvent& event,
                            int deltaX,
                            int deltaY) override;
-  void SendMouseWheelEvent(const CefPlatformMouseEvent& event) override;
   void SendTouchEvent(const CefTouchEvent& event) override;
   std::unique_ptr<CefMenuRunner> CreateMenuRunner() override;
   gfx::Point GetScreenPoint(const gfx::Point& view,

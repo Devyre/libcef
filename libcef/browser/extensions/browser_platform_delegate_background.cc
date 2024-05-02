@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/extensions/browser_platform_delegate_background.h"
+#include "cef/libcef/browser/extensions/browser_platform_delegate_background.h"
 
 #include <utility>
 
-#include "libcef/browser/alloy/alloy_browser_host_impl.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/features/runtime_checks.h"
-
+#include "cef/libcef/browser/alloy/alloy_browser_host_impl.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/features/runtime_checks.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/browser/render_widget_host.h"
 
@@ -79,11 +78,6 @@ void CefBrowserPlatformDelegateBackground::SendMouseWheelEvent(
     const CefMouseEvent& event,
     int deltaX,
     int deltaY) {
-  // Nothing to do here.
-}
-
-void CefBrowserPlatformDelegateBackground::SendMouseWheelEvent(
-    const CefPlatformMouseEvent& event) {
   // Nothing to do here.
 }
 

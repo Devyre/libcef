@@ -2,12 +2,11 @@
 // reserved. Use of this source code is governed by a BSD-style license that can
 // be found in the LICENSE file.
 
-#include "libcef/browser/net_service/cookie_helper.h"
-
-#include "libcef/browser/thread_util.h"
-#include "libcef/common/net_service/net_service_util.h"
+#include "cef/libcef/browser/net_service/cookie_helper.h"
 
 #include "base/functional/bind.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/common/net_service/net_service_util.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/storage_partition.h"
 #include "content/public/common/url_constants.h"
@@ -253,7 +252,8 @@ void LoadCookies(const CefBrowserContext::Getter& browser_context_getter,
       !request.trusted_params->isolation_info.IsEmpty()) {
     partition_key_collection = net::CookiePartitionKeyCollection::FromOptional(
         net::CookiePartitionKey::FromNetworkIsolationKey(
-            request.trusted_params->isolation_info.network_isolation_key()));
+            request.trusted_params->isolation_info.network_isolation_key(),
+            request.site_for_cookies, net::SchemefulSite(request.url)));
   }
 
   CEF_POST_TASK(
@@ -286,7 +286,7 @@ void SaveCookies(const CefBrowserContext::Getter& browser_context_getter,
     response_date = base::Time();
   }
 
-  const base::StringPiece name(net_service::kHTTPSetCookieHeaderName);
+  const std::string_view name(net_service::kHTTPSetCookieHeaderName);
   std::string cookie_string;
   size_t iter = 0;
   net::CookieList allowed_cookies;
@@ -300,7 +300,8 @@ void SaveCookies(const CefBrowserContext::Getter& browser_context_getter,
         request.url, cookie_string, base::Time::Now(),
         std::make_optional(response_date),
         /*cookie_partition_key=*/std::nullopt,
-        /*block_truncated=*/true, &returned_status);
+        /*block_truncated=*/true, net::CookieSourceType::kHTTP,
+        &returned_status);
     if (!returned_status.IsInclude()) {
       continue;
     }

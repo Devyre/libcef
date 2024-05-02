@@ -3,7 +3,6 @@
 // can be found in the LICENSE file.
 
 #include "tests/cefclient/browser/client_browser.h"
-#include "tests/cefclient/browser/main_context.h"
 
 #include "include/base/cef_logging.h"
 #include "include/cef_command_line.h"
@@ -69,7 +68,9 @@ class ClientBrowserDelegate : public ClientAppBrowser::Delegate {
       const CefString& current_directory) override {
     // Add logging for some common switches that the user may attempt to use.
     static const char* kIgnoredSwitches[] = {
+#if !defined(DISABLE_ALLOY_BOOTSTRAP)
         switches::kEnableChromeRuntime,
+#endif
         switches::kMultiThreadedMessageLoop,
         switches::kOffScreenRenderingEnabled,
         switches::kUseViews,

@@ -2,21 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-#include "libcef/browser/views/browser_view_impl.h"
+#include "cef/libcef/browser/views/browser_view_impl.h"
 
 #include <memory>
 #include <optional>
 
-#include "libcef/browser/browser_host_base.h"
-#include "libcef/browser/browser_util.h"
-#include "libcef/browser/chrome/views/chrome_browser_view.h"
-#include "libcef/browser/context.h"
-#include "libcef/browser/request_context_impl.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/browser/views/widget.h"
-#include "libcef/browser/views/window_impl.h"
-#include "libcef/features/runtime.h"
-
+#include "cef/libcef/browser/browser_host_base.h"
+#include "cef/libcef/browser/browser_util.h"
+#include "cef/libcef/browser/chrome/views/chrome_browser_view.h"
+#include "cef/libcef/browser/context.h"
+#include "cef/libcef/browser/request_context_impl.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/browser/views/widget.h"
+#include "cef/libcef/browser/views/window_impl.h"
+#include "cef/libcef/features/runtime.h"
 #include "chrome/browser/profiles/profile.h"
 #include "content/public/common/input/native_web_keyboard_event.h"
 #include "ui/content_accelerators/accelerator_util.h"
@@ -40,12 +39,17 @@ std::optional<cef_gesture_command_t> GetGestureCommand(
 bool ComputeAlloyStyle(CefBrowserViewDelegate* cef_delegate,
                        bool is_devtools_popup) {
   // Alloy style is not supported with Chrome DevTools popups.
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   const bool supports_alloy_style =
       cef::IsAlloyRuntimeEnabled() || !is_devtools_popup;
   const bool supports_chrome_style = cef::IsChromeRuntimeEnabled();
   const auto default_style = cef::IsAlloyRuntimeEnabled()
                                  ? CEF_RUNTIME_STYLE_ALLOY
                                  : CEF_RUNTIME_STYLE_CHROME;
+#else
+  const bool supports_alloy_style = !is_devtools_popup;
+  const auto default_style = CEF_RUNTIME_STYLE_CHROME;
+#endif
 
   auto result_style = default_style;
 
@@ -59,12 +63,17 @@ bool ComputeAlloyStyle(CefBrowserViewDelegate* cef_delegate,
                       "Chrome style is supported";
       }
     } else if (requested_style == CEF_RUNTIME_STYLE_CHROME) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
       if (supports_chrome_style) {
         result_style = requested_style;
       } else {
         LOG(ERROR) << "GetBrowserRuntimeStyle() requested Chrome style; only "
                       "Alloy style is supported";
       }
+#else
+      // Chrome style is always supported.
+      result_style = requested_style;
+#endif
     }
   }
 

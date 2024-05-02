@@ -6,17 +6,15 @@
 #define CEF_LIBCEF_BROWSER_BROWSER_INFO_MANAGER_H_
 #pragma once
 
-#include "include/cef_client.h"
-
 #include <list>
 #include <map>
 #include <memory>
 #include <vector>
 
-#include "libcef/browser/browser_info.h"
-
 #include "base/synchronization/lock.h"
 #include "base/task/sequenced_task_runner.h"
+#include "cef/include/cef_client.h"
+#include "cef/libcef/browser/browser_info.h"
 #include "cef/libcef/common/mojom/cef.mojom.h"
 #include "content/public/browser/global_routing_id.h"
 #include "content/public/browser/render_process_host_observer.h"
@@ -110,9 +108,9 @@ class CefBrowserInfoManager : public content::RenderProcessHostObserver {
   // browser info to the renderer process. If the browser info already exists
   // the response will be sent immediately. Otherwise, the response will be sent
   // when CreatePopupBrowserInfo creates the browser info. The info will already
-  // exist for explicitly created browsers and guest views. It may sometimes
-  // already exist for traditional popup browsers depending on timing. See
-  // comments on PendingPopup for more information.
+  // exist for explicitly created browsers. It may sometimes already exist for
+  // traditional popup browsers depending on timing. See comments on
+  // PendingPopup for more information.
   void OnGetNewBrowserInfo(
       const content::GlobalRenderFrameHostToken& global_token,
       cef::mojom::BrowserManager::GetNewBrowserInfoCallback callback);
@@ -127,15 +125,10 @@ class CefBrowserInfoManager : public content::RenderProcessHostObserver {
   // Returns the CefBrowserInfo matching the specified ID/token or nullptr if no
   // match is found. It is allowed to add new callers of this method but
   // consider using CefBrowserHostBase::GetBrowserForGlobalId/Token() instead.
-  // If |is_guest_view| is non-nullptr it will be set to true if the ID/token
-  // matches a guest view associated with the returned browser info instead of
-  // the browser itself.
   scoped_refptr<CefBrowserInfo> GetBrowserInfo(
-      const content::GlobalRenderFrameHostId& global_id,
-      bool* is_guest_view = nullptr);
+      const content::GlobalRenderFrameHostId& global_id);
   scoped_refptr<CefBrowserInfo> GetBrowserInfo(
-      const content::GlobalRenderFrameHostToken& global_token,
-      bool* is_guest_view = nullptr);
+      const content::GlobalRenderFrameHostToken& global_token);
 
   // Returns all existing CefBrowserInfo objects.
   using BrowserInfoList = std::list<scoped_refptr<CefBrowserInfo>>;
@@ -152,13 +145,16 @@ class CefBrowserInfoManager : public content::RenderProcessHostObserver {
                                            bool use_default_browser_creation);
 
   // Returns the FrameHost associated with |rfh|, if any. |browser_info| and
-  // |excluded_type| will be populated if non-nullptr. An excluded type will not
+  // |is_excluded| will be populated if non-nullptr. An excluded type will not
   // have a FrameHost but |browser_info| may still be populated if the
   // association is known.
   static CefRefPtr<CefFrameHostImpl> GetFrameHost(content::RenderFrameHost* rfh,
                                                   bool prefer_speculative,
                                                   CefBrowserInfo** browser_info,
-                                                  bool* excluded_type);
+                                                  bool* is_excluded);
+
+  // Returns true if |rfh| should be excluded (no FrameHost created).
+  static bool IsExcludedFrameHost(content::RenderFrameHost* rfh);
 
  private:
   // RenderProcessHostObserver methods:
@@ -168,7 +164,7 @@ class CefBrowserInfoManager : public content::RenderProcessHostObserver {
   // - CanCreateWindow (UIT):
   //   Provides an opportunity to cancel the popup (calls OnBeforePopup) and
   //   creates the new platform delegate for the popup. If the popup owner is
-  //   an extension guest view then the popup is canceled and
+  //   an extension guest view (PDF viewer) then the popup is canceled and
   //   WebContentsDelegate::OpenURLFromTab is called via the
   //   CefBrowserHostBase::MaybeAllowNavigation implementation.
   // And then the following calls may occur at the same time:
@@ -234,11 +230,9 @@ class CefBrowserInfoManager : public content::RenderProcessHostObserver {
 
   // Retrieves the BrowserInfo matching the specified ID/token.
   scoped_refptr<CefBrowserInfo> GetBrowserInfoInternal(
-      const content::GlobalRenderFrameHostId& global_id,
-      bool* is_guest_view);
+      const content::GlobalRenderFrameHostId& global_id);
   scoped_refptr<CefBrowserInfo> GetBrowserInfoInternal(
-      const content::GlobalRenderFrameHostToken& global_token,
-      bool* is_guest_view);
+      const content::GlobalRenderFrameHostToken& global_token);
 
   // Check for excluded frames that can be responded to immediately.
   static void CheckExcludedNewBrowserInfoOnUIThread(
@@ -247,12 +241,12 @@ class CefBrowserInfoManager : public content::RenderProcessHostObserver {
   void ContinueNewBrowserInfo(
       const content::GlobalRenderFrameHostToken& global_token,
       scoped_refptr<CefBrowserInfo> browser_info,
-      bool is_guest_view);
+      bool is_excluded);
 
   // Send the response for a pending OnGetNewBrowserInfo request.
   static void SendNewBrowserInfoResponse(
       scoped_refptr<CefBrowserInfo> browser_info,
-      bool is_guest_view,
+      bool is_excluded,
       cef::mojom::BrowserManager::GetNewBrowserInfoCallback callback,
       scoped_refptr<base::SequencedTaskRunner> callback_runner);
 

@@ -3,14 +3,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/browser/main_runner.h"
-
-#include "libcef/browser/browser_message_loop.h"
-#include "libcef/browser/thread_util.h"
-#include "libcef/common/alloy/alloy_main_runner_delegate.h"
-#include "libcef/common/cef_switches.h"
-#include "libcef/common/chrome/chrome_main_runner_delegate.h"
-#include "libcef/features/runtime.h"
+#include "cef/libcef/browser/main_runner.h"
 
 #include "base/at_exit.h"
 #include "base/base_switches.h"
@@ -21,6 +14,11 @@
 #include "base/synchronization/lock.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/threading/thread.h"
+#include "cef/libcef/browser/browser_message_loop.h"
+#include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/common/cef_switches.h"
+#include "cef/libcef/common/chrome/chrome_main_runner_delegate.h"
+#include "cef/libcef/features/runtime.h"
 #include "chrome/common/chrome_result_codes.h"
 #include "components/crash/core/app/crash_switches.h"
 #include "content/app/content_main_runner_impl.h"
@@ -40,36 +38,48 @@
 
 #if BUILDFLAG(IS_WIN)
 #include <Objbase.h>
+
 #include <windows.h>
 
 #include <memory>
+
 #include "content/public/app/sandbox_helper_win.h"
 #include "sandbox/win/src/sandbox_types.h"
+#endif
+
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+#include "cef/libcef/common/alloy/alloy_main_runner_delegate.h"
 #endif
 
 namespace {
 
 enum class RuntimeType {
   UNINITIALIZED,
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   ALLOY,
+#endif
   CHROME,
 };
 RuntimeType g_runtime_type = RuntimeType::UNINITIALIZED;
 
 std::unique_ptr<CefMainRunnerDelegate> MakeDelegate(
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
     RuntimeType type,
+#endif
     CefMainRunnerHandler* runner,
     CefSettings* settings,
     CefRefPtr<CefApp> application) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   if (type == RuntimeType::ALLOY) {
     g_runtime_type = RuntimeType::ALLOY;
     return std::make_unique<AlloyMainRunnerDelegate>(runner, settings,
                                                      application);
-  } else {
-    g_runtime_type = RuntimeType::CHROME;
-    return std::make_unique<ChromeMainRunnerDelegate>(runner, settings,
-                                                      application);
   }
+#endif
+
+  g_runtime_type = RuntimeType::CHROME;
+  return std::make_unique<ChromeMainRunnerDelegate>(runner, settings,
+                                                    application);
 }
 
 // Based on components/crash/core/app/run_as_crashpad_handler_win.cc
@@ -258,10 +268,18 @@ bool CefMainRunner::Initialize(CefSettings* settings,
                                void* windows_sandbox_info,
                                bool* initialized,
                                base::OnceClosure context_initialized) {
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+  LOG_IF(WARNING, !settings->chrome_runtime)
+      << "Alloy bootstrap is deprecated and will be removed in ~M127. See "
+         "https://github.com/chromiumembedded/cef/issues/3685";
+#endif
+
   DCHECK(!main_delegate_);
   main_delegate_ = MakeDelegate(
-      settings->chrome_runtime ? RuntimeType::CHROME : RuntimeType::ALLOY, this,
-      settings, application);
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+      settings->chrome_runtime ? RuntimeType::CHROME : RuntimeType::ALLOY,
+#endif
+      this, settings, application);
 
   exit_code_ =
       ContentMainInitialize(args, windows_sandbox_info, &settings->no_sandbox);
@@ -373,11 +391,13 @@ int CefMainRunner::RunAsHelperProcess(const CefMainArgs& args,
     return -1;
   }
 
-  auto runtime_type = command_line.HasSwitch(switches::kEnableChromeRuntime)
-                          ? RuntimeType::CHROME
-                          : RuntimeType::ALLOY;
-  auto main_delegate = MakeDelegate(runtime_type, /*runner=*/nullptr,
-                                    /*settings=*/nullptr, application);
+  auto main_delegate = MakeDelegate(
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
+      command_line.HasSwitch(switches::kEnableChromeRuntime)
+          ? RuntimeType::CHROME
+          : RuntimeType::ALLOY,
+#endif
+      /*runner=*/nullptr, /*settings=*/nullptr, application);
   main_delegate->BeforeExecuteProcess(args);
 
   int result;
@@ -584,9 +604,11 @@ void CefMainRunner::FinishShutdownOnUIThread() {
 // From libcef/features/runtime.h:
 namespace cef {
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 bool IsAlloyRuntimeEnabled() {
   return g_runtime_type == RuntimeType::ALLOY;
 }
+#endif
 
 bool IsChromeRuntimeEnabled() {
   return g_runtime_type == RuntimeType::CHROME;

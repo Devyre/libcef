@@ -9,11 +9,10 @@
 #include <string>
 #include <utility>
 
-#include "include/cef_request_context_handler.h"
-#include "libcef/browser/request_context_impl.h"
-
 #include "base/memory/ref_counted.h"
 #include "build/build_config.h"
+#include "cef/include/cef_request_context_handler.h"
+#include "cef/libcef/browser/request_context_impl.h"
 #include "content/public/browser/content_browser_client.h"
 #include "content/public/browser/web_contents.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -45,10 +44,10 @@ class AlloyContentBrowserClient : public content::ContentBrowserClient {
   bool DoesSiteRequireDedicatedProcess(content::BrowserContext* browser_context,
                                        const GURL& effective_site_url) override;
   bool ShouldTreatURLSchemeAsFirstPartyWhenTopLevel(
-      base::StringPiece scheme,
+      std::string_view scheme,
       bool is_embedded_origin_secure) override;
   bool ShouldIgnoreSameSiteCookieRestrictionsWhenTopLevel(
-      base::StringPiece scheme,
+      std::string_view scheme,
       bool is_embedded_origin_secure) override;
   void OverrideURLLoaderFactoryParams(
       content::BrowserContext* browser_context,
@@ -186,6 +185,7 @@ class AlloyContentBrowserClient : public content::ContentBrowserClient {
       int render_process_id,
       URLLoaderFactoryType type,
       const url::Origin& request_initiator,
+      const net::IsolationInfo& isolation_info,
       std::optional<int64_t> navigation_id,
       ukm::SourceIdObj ukm_source_id,
       network::URLLoaderFactoryBuilder& factory_builder,

@@ -6,11 +6,11 @@
 #define CEF_LIBCEF_BROWSER_REQUEST_CONTEXT_IMPL_H_
 #pragma once
 
-#include "include/cef_request_context.h"
-#include "libcef/browser/browser_context.h"
-#include "libcef/browser/media_router/media_router_impl.h"
-#include "libcef/browser/net_service/cookie_manager_impl.h"
-#include "libcef/browser/thread_util.h"
+#include "cef/include/cef_request_context.h"
+#include "cef/libcef/browser/browser_context.h"
+#include "cef/libcef/browser/media_router/media_router_impl.h"
+#include "cef/libcef/browser/net_service/cookie_manager_impl.h"
+#include "cef/libcef/browser/thread_util.h"
 
 namespace content {
 struct GlobalRenderFrameHostId;
@@ -139,19 +139,15 @@ class CefRequestContextImpl : public CefRequestContext {
 
   const CefRequestContextSettings& settings() const { return config_.settings; }
 
-  // Called from CefBrowserContentsDelegate::RenderFrameCreated or
-  // CefMimeHandlerViewGuestDelegate::OnGuestAttached when a render frame is
-  // created.
+  // Called from CefBrowserContentsDelegate::RenderFrameCreated when a render
+  // frame is created.
   void OnRenderFrameCreated(const content::GlobalRenderFrameHostId& global_id,
-                            bool is_main_frame,
-                            bool is_guest_view);
+                            bool is_main_frame);
 
-  // Called from CefBrowserContentsDelegate::RenderFrameDeleted or
-  // CefMimeHandlerViewGuestDelegate::OnGuestDetached when a render frame is
-  // deleted.
+  // Called from CefBrowserContentsDelegate::RenderFrameDeleted when a render
+  // frame is deleted.
   void OnRenderFrameDeleted(const content::GlobalRenderFrameHostId& global_id,
-                            bool is_main_frame,
-                            bool is_guest_view);
+                            bool is_main_frame);
 
  private:
   friend class CefRequestContext;

@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "libcef/renderer/extensions/extensions_renderer_client.h"
-
-#include "libcef/renderer/alloy/alloy_content_renderer_client.h"
-#include "libcef/renderer/alloy/alloy_render_thread_observer.h"
-#include "libcef/renderer/extensions/extensions_renderer_api_provider.h"
+#include "cef/libcef/renderer/extensions/extensions_renderer_client.h"
 
 #include "base/stl_util.h"
+#include "cef/libcef/renderer/alloy/alloy_content_renderer_client.h"
+#include "cef/libcef/renderer/alloy/alloy_render_thread_observer.h"
+#include "cef/libcef/renderer/extensions/extensions_renderer_api_provider.h"
 #include "chrome/common/url_constants.h"
 #include "chrome/renderer/extensions/resource_request_policy.h"
 #include "content/public/common/content_constants.h"
@@ -18,7 +17,6 @@
 #include "extensions/common/permissions/permissions_data.h"
 #include "extensions/renderer/api/core_extensions_renderer_api_provider.h"
 #include "extensions/renderer/dispatcher.h"
-#include "extensions/renderer/dispatcher_delegate.h"
 #include "extensions/renderer/extension_frame_helper.h"
 #include "extensions/renderer/extensions_render_frame_observer.h"
 #include "extensions/renderer/extensions_renderer_api_provider.h"
@@ -87,9 +85,8 @@ bool CefExtensionsRendererClient::ExtensionAPIEnabledForServiceWorkerScript(
 void CefExtensionsRendererClient::RenderThreadStarted() {
   content::RenderThread* thread = content::RenderThread::Get();
 
-  extension_dispatcher_ = std::make_unique<extensions::Dispatcher>(
-      std::make_unique<extensions::DispatcherDelegate>(),
-      std::move(api_providers_));
+  extension_dispatcher_ =
+      std::make_unique<extensions::Dispatcher>(std::move(api_providers_));
   extension_dispatcher_->OnRenderThreadStarted(thread);
   resource_request_policy_ =
       std::make_unique<extensions::ResourceRequestPolicy>(

@@ -9,13 +9,12 @@
 #include <queue>
 #include <string>
 
-#include "include/cef_frame.h"
-#include "include/cef_v8.h"
-#include "libcef/renderer/blink_glue.h"
-
 #include "base/memory/weak_ptr.h"
 #include "base/timer/timer.h"
+#include "cef/include/cef_frame.h"
+#include "cef/include/cef_v8.h"
 #include "cef/libcef/common/mojom/cef.mojom.h"
+#include "cef/libcef/renderer/blink_glue.h"
 #include "mojo/public/cpp/bindings/pending_receiver.h"
 #include "mojo/public/cpp/bindings/receiver.h"
 #include "mojo/public/cpp/bindings/remote.h"
@@ -85,7 +84,6 @@ class CefFrameImpl
   void OnWasShown();
   void OnDidCommitProvisionalLoad();
   void OnDidFinishLoad();
-  void OnDraggableRegionsChanged();
   void OnContextCreated(v8::Local<v8::Context> context);
   void OnContextReleased();
   void OnDetached();
@@ -93,6 +91,11 @@ class CefFrameImpl
   blink::WebLocalFrame* web_frame() const { return frame_; }
 
  private:
+  // Called for draggable region changes due to navigation. This is in addition
+  // to the standard notifications delivered via
+  // WebContentsDelegate::DraggableRegionsChanged.
+  void OnDraggableRegionsChanged();
+
   // Execute an action on the associated WebLocalFrame. This will queue the
   // action if the JavaScript context is not yet created.
   using LocalFrameAction =

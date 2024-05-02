@@ -6,23 +6,26 @@
 #define CEF_LIBCEF_BROWSER_BROWSER_HOST_BASE_H_
 #pragma once
 
-#include "include/cef_browser.h"
-#include "include/cef_client.h"
-#include "include/cef_unresponsive_process_callback.h"
-#include "include/views/cef_browser_view.h"
-#include "libcef/browser/browser_contents_delegate.h"
-#include "libcef/browser/browser_info.h"
-#include "libcef/browser/browser_platform_delegate.h"
-#include "libcef/browser/devtools/devtools_protocol_manager.h"
-#include "libcef/browser/devtools/devtools_window_runner.h"
-#include "libcef/browser/file_dialog_manager.h"
-#include "libcef/browser/frame_host_impl.h"
-#include "libcef/browser/media_stream_registrar.h"
-#include "libcef/browser/request_context_impl.h"
-
 #include "base/observer_list.h"
 #include "base/synchronization/lock.h"
+#include "cef/include/cef_browser.h"
+#include "cef/include/cef_client.h"
+#include "cef/include/cef_unresponsive_process_callback.h"
+#include "cef/include/views/cef_browser_view.h"
+#include "cef/libcef/browser/browser_contents_delegate.h"
+#include "cef/libcef/browser/browser_info.h"
+#include "cef/libcef/browser/browser_platform_delegate.h"
+#include "cef/libcef/browser/devtools/devtools_protocol_manager.h"
+#include "cef/libcef/browser/devtools/devtools_window_runner.h"
+#include "cef/libcef/browser/file_dialog_manager.h"
+#include "cef/libcef/browser/frame_host_impl.h"
+#include "cef/libcef/browser/media_stream_registrar.h"
+#include "cef/libcef/browser/request_context_impl.h"
+#include "cef/libcef/features/features.h"
+
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
 #include "extensions/common/mojom/view_type.mojom.h"
+#endif
 
 namespace extensions {
 class Extension;
@@ -99,9 +102,11 @@ struct CefBrowserCreateParams {
   // Browser settings.
   CefBrowserSettings settings;
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   // Other browser that opened this DevTools browser. Will be nullptr for non-
   // DevTools browsers. Currently used with the alloy runtime only.
   CefRefPtr<CefBrowserHostBase> devtools_opener;
+#endif
 
   // Request context to use when creating the browser. If nullptr the global
   // request context will be used.
@@ -111,12 +116,14 @@ struct CefBrowserCreateParams {
   // CefRenderProcessHandler::OnBrowserCreated.
   CefRefPtr<CefDictionaryValue> extra_info;
 
+#if BUILDFLAG(ENABLE_ALLOY_BOOTSTRAP)
   // Used when explicitly creating the browser as an extension host via
   // ProcessManager::CreateBackgroundHost. Currently used with the alloy
   // runtime only.
   const extensions::Extension* extension = nullptr;
   extensions::mojom::ViewType extension_host_type =
       extensions::mojom::ViewType::kInvalid;
+#endif
 };
 
 // Base class for CefBrowserHost implementations. Includes functionality that is
@@ -243,7 +250,6 @@ class CefBrowserHostBase : public CefBrowserHost,
   void SendMouseWheelEvent(const CefMouseEvent& event,
                            int deltaX,
                            int deltaY) override;
-  void SendMouseWheelEvent(const CefPlatformMouseEvent& event) override;
   bool SendDevToolsMessage(const void* message, size_t message_size) override;
   int ExecuteDevToolsMethod(int message_id,
                             const CefString& method,
@@ -254,6 +260,8 @@ class CefBrowserHostBase : public CefBrowserHost,
                             bool current_only) override;
   CefRefPtr<CefNavigationEntry> GetVisibleNavigationEntry() override;
   void NotifyMoveOrResizeStarted() override;
+  CefRefPtr<CefExtension> GetExtension() override;
+  bool IsBackgroundHost() override;
   bool IsFullscreen() override;
   void ExitFullscreen(bool will_cause_resize) override;
   bool IsRenderProcessUnresponsive() override;
@@ -289,12 +297,8 @@ class CefBrowserHostBase : public CefBrowserHost,
   void OnWebContentsDestroyed(content::WebContents* web_contents) override;
 
   // Returns the frame object matching the specified |host| or nullptr if no
-  // match is found. Nullptr will also be returned if a guest view match is
-  // found because we don't create frame objects for guest views. If
-  // |is_guest_view| is non-nullptr it will be set to true in this case. Must be
-  // called on the UI thread.
-  CefRefPtr<CefFrame> GetFrameForHost(const content::RenderFrameHost* host,
-                                      bool* is_guest_view = nullptr);
+  // match is found. Must be called on the UI thread.
+  CefRefPtr<CefFrame> GetFrameForHost(const content::RenderFrameHost* host);
 
   // Returns the frame associated with the specified global ID/token. See
   // documentation on RenderFrameHost::GetFrameTreeNodeId/Token() for why the
