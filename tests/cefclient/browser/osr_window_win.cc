@@ -587,169 +587,172 @@ void OsrWindowWin::OnMouseEvent(UINT message, WPARAM wParam, LPARAM lParam) {
   };
 
   DWORD currentTime = (DWORD) ::GetMessageTime();
-  switch (message)
+  if (message == WM_LBUTTONDOWN ||
+      message == WM_LBUTTONDBLCLK ||
+      message == WM_LBUTTONUP ||
+      message == WM_RBUTTONDOWN ||
+      message == WM_RBUTTONDBLCLK ||
+      message == WM_RBUTTONUP ||
+      message == WM_MBUTTONDOWN ||
+      message == WM_MBUTTONDBLCLK ||
+      message == WM_MBUTTONUP)
   {
-    case WM_LBUTTONDOWN:
-    case WM_LBUTTONDBLCLK:
-    case WM_LBUTTONUP:
-    case WM_RBUTTONDOWN:
-    case WM_RBUTTONDBLCLK:
-    case WM_RBUTTONUP:
-    case WM_MBUTTONDOWN:
-    case WM_MBUTTONDBLCLK:
-    case WM_MBUTTONUP:
-      int x = GET_X_LPARAM(lParam);
-      int y = GET_Y_LPARAM(lParam);
+    int x = GET_X_LPARAM(lParam);
+    int y = GET_Y_LPARAM(lParam);
 
-      if (message == WM_LBUTTONDOWN ||
-          message == WM_RBUTTONDOWN ||
-          message == WM_MBUTTONDOWN) {
-        ::SetCapture(hwnd_);
-        ::SetFocus(hwnd_);
-      }
-      else if (message == WM_LBUTTONUP ||
-               message == WM_RBUTTONUP ||
-               message == WM_MBUTTONUP) {
-        if (::GetCapture() == hwnd_) {
-          ::ReleaseCapture();
-        }
-
-        if (mouse_rotation_) {
-          // End rotation effect.
-          mouse_rotation_ = false;
-          render_handler_->SetSpin(0, 0);
-        } else {
-          CefBrowserHost::MouseButtonType btnType =
-              (message == WM_LBUTTONUP
-                  ? MBT_LEFT
-                  : (message == WM_RBUTTONUP ? MBT_RIGHT : MBT_MIDDLE));
-          if (browser_host) {
-            if (last_mouse_down_on_view_ && IsOverPopupWidget(x, y) &&
-                (GetPopupXOffset() || GetPopupYOffset())) {
-              break;
-            }
-            ApplyPopupOffset(x, y);
-          }
-        }
+    if (message == WM_LBUTTONDOWN ||
+        message == WM_RBUTTONDOWN ||
+        message == WM_MBUTTONDOWN) {
+      ::SetCapture(hwnd_);
+      ::SetFocus(hwnd_);
+    }
+    else if (message == WM_LBUTTONUP ||
+              message == WM_RBUTTONUP ||
+              message == WM_MBUTTONUP) {
+      if (::GetCapture() == hwnd_) {
+        ::ReleaseCapture();
       }
 
-      x = DeviceToLogical(GET_X_LPARAM(lParam), device_scale_factor_);
-      y = DeviceToLogical(GET_Y_LPARAM(lParam), device_scale_factor_);
-
-      CHROME_MSG platform_event = {
-        hwnd_, message, wParam,
-        MAKELPARAM(x, y),
-        (DWORD)currentTime
-      };
-
-      browser_host->SendMouseClickEvent((CefPlatformMouseEvent) &platform_event);
-      break;
-
-    case WM_MOUSEMOVE: {
-      int x = GET_X_LPARAM(lParam);
-      int y = GET_Y_LPARAM(lParam);
       if (mouse_rotation_) {
-        // Apply rotation effect.
-        current_mouse_pos_.x = x;
-        current_mouse_pos_.y = y;
-        render_handler_->IncrementSpin(
-            current_mouse_pos_.x - last_mouse_pos_.x,
-            current_mouse_pos_.y - last_mouse_pos_.y);
-        last_mouse_pos_.x = current_mouse_pos_.x;
-        last_mouse_pos_.y = current_mouse_pos_.y;
+        // End rotation effect.
+        mouse_rotation_ = false;
+        render_handler_->SetSpin(0, 0);
       } else {
-        if (!mouse_tracking_) {
-          // Start tracking mouse leave. Required for the WM_MOUSELEAVE event to
-          // be generated.
-          TRACKMOUSEEVENT tme;
-          tme.cbSize = sizeof(TRACKMOUSEEVENT);
-          tme.dwFlags = TME_LEAVE;
-          tme.hwndTrack = hwnd_;
-          TrackMouseEvent(&tme);
-          mouse_tracking_ = true;
-        }
-
         if (browser_host) {
+          if (last_mouse_down_on_view_ && IsOverPopupWidget(x, y) &&
+              (GetPopupXOffset() || GetPopupYOffset())) {
+            return;
+          }
           ApplyPopupOffset(x, y);
-          x = DeviceToLogical(x, device_scale_factor_);
-          y = DeviceToLogical(y, device_scale_factor_);
-
-          CHROME_MSG platform_event = {
-            hwnd_, message, wParam,
-            MAKELPARAM(x, y),
-            (DWORD)currentTime
-          };
-
-          browser_host->SendMouseMoveEvent((CefPlatformMouseEvent) &platform_event);
         }
       }
-      break;
     }
 
-    case WM_MOUSELEAVE: {
-      if (mouse_tracking_) {
-        // Stop tracking mouse leave.
+    x = DeviceToLogical(GET_X_LPARAM(lParam), device_scale_factor_);
+    y = DeviceToLogical(GET_Y_LPARAM(lParam), device_scale_factor_);
+
+    CHROME_MSG platform_event = {
+      hwnd_, message, wParam,
+      MAKELPARAM(x, y),
+      (DWORD)currentTime
+    };
+
+    browser_host->SendMouseClickEvent((CefPlatformMouseEvent) &platform_event);
+  }
+  else if (message == WM_MOUSEMOVE) {
+    int x = GET_X_LPARAM(lParam);
+    int y = GET_Y_LPARAM(lParam);
+    if (mouse_rotation_) {
+      // Apply rotation effect.
+      current_mouse_pos_.x = x;
+      current_mouse_pos_.y = y;
+      render_handler_->IncrementSpin(
+          current_mouse_pos_.x - last_mouse_pos_.x,
+          current_mouse_pos_.y - last_mouse_pos_.y);
+      last_mouse_pos_.x = current_mouse_pos_.x;
+      last_mouse_pos_.y = current_mouse_pos_.y;
+    } else {
+      if (!mouse_tracking_) {
+        // Start tracking mouse leave. Required for the WM_MOUSELEAVE event to
+        // be generated.
         TRACKMOUSEEVENT tme;
         tme.cbSize = sizeof(TRACKMOUSEEVENT);
-        tme.dwFlags = TME_LEAVE & TME_CANCEL;
+        tme.dwFlags = TME_LEAVE;
         tme.hwndTrack = hwnd_;
         TrackMouseEvent(&tme);
-        mouse_tracking_ = false;
+        mouse_tracking_ = true;
       }
 
       if (browser_host) {
-        // Determine the cursor position in screen coordinates.
-        POINT p;
-        ::GetCursorPos(&p);
-        ::ScreenToClient(hwnd_, &p);
-
-        int x = DeviceToLogical((int) p.x, device_scale_factor_);
-        int y = DeviceToLogical((int) p.y, device_scale_factor_);
+        ApplyPopupOffset(x, y);
+        x = DeviceToLogical(x, device_scale_factor_);
+        y = DeviceToLogical(y, device_scale_factor_);
 
         CHROME_MSG platform_event = {
           hwnd_, message, wParam,
           MAKELPARAM(x, y),
-          (DWORD) currentTime
+          (DWORD)currentTime
         };
 
         browser_host->SendMouseMoveEvent((CefPlatformMouseEvent) &platform_event);
       }
-
-      break;
+    }
+  }
+  else if (message == WM_MOUSELEAVE) {
+    if (mouse_tracking_) {
+      // Stop tracking mouse leave.
+      TRACKMOUSEEVENT tme;
+      tme.cbSize = sizeof(TRACKMOUSEEVENT);
+      tme.dwFlags = TME_LEAVE & TME_CANCEL;
+      tme.hwndTrack = hwnd_;
+      TrackMouseEvent(&tme);
+      mouse_tracking_ = false;
     }
 
-    case WM_MOUSEWHEEL: {
-      if (browser_host) {
-        POINT screen_point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-        HWND scrolled_wnd = ::WindowFromPoint(screen_point);
-        if (scrolled_wnd != hwnd_) {
-          break;
-        }
+    if (browser_host) {
+      // Determine the cursor position in screen coordinates.
+      POINT p;
+      ::GetCursorPos(&p);
+      ::ScreenToClient(hwnd_, &p);
 
-        ScreenToClient(hwnd_, &screen_point);
-        // int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+      int x = DeviceToLogical((int) p.x, device_scale_factor_);
+      int y = DeviceToLogical((int) p.y, device_scale_factor_);
 
-        int x = screen_point.x;
-        int y = screen_point.y;
-        ApplyPopupOffset(x, y);
+      CHROME_MSG platform_event = {
+        hwnd_, message, wParam,
+        MAKELPARAM(x, y),
+        (DWORD) currentTime
+      };
 
-        x = DeviceToLogical(x, device_scale_factor_);
-        y = DeviceToLogical(y, device_scale_factor_);
-
-        CHROME_MSG platform_event = {hwnd_, message, wParam,
-                                     MAKELPARAM(x, y),
-                                     (DWORD) currentTime};
-
-        browser_host->SendMouseWheelEvent(
-            (CefPlatformMouseEvent)&platform_event);
-
+      browser_host->SendMouseMoveEvent((CefPlatformMouseEvent) &platform_event);
+    }
+  }
+  else if (message == WM_MOUSEWHEEL || message == WM_MOUSEHWHEEL) {
+    if (browser_host) {
+      POINT screen_point = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+      HWND scrolled_wnd = ::WindowFromPoint(screen_point);
+      if (scrolled_wnd != hwnd_) {
+        return;
       }
 
-      break;
-    }
+      ScreenToClient(hwnd_, &screen_point);
+      // int delta = GET_WHEEL_DELTA_WPARAM(wParam);
 
-    default:
-      break;
+      int x = screen_point.x;
+      int y = screen_point.y;
+      ApplyPopupOffset(x, y);
+
+      x = DeviceToLogical(x, device_scale_factor_);
+      y = DeviceToLogical(y, device_scale_factor_);
+
+      CHROME_MSG platform_event = {hwnd_, message, wParam,
+                                    MAKELPARAM(x, y),
+                                    (DWORD) currentTime};
+
+      browser_host->SendMouseWheelEvent(
+          (CefPlatformMouseEvent)&platform_event);
+
+    }
+  }
+  else {
+    // Any other mouse event can be handled by using SendMouseMoveEvent.
+    // Internally, as long as a CefPlatformEvent is passed, it will invoke
+    // the blink platform message processor to convert it to a web event.
+    // In simple terms, it will always convert it to a correct mouse event.
+    POINT p;
+    ::GetCursorPos(&p);
+    ::ScreenToClient(hwnd_, &p);
+
+    int x = DeviceToLogical((int) p.x, device_scale_factor_);
+    int y = DeviceToLogical((int) p.y, device_scale_factor_);
+
+    CHROME_MSG platform_event = {
+      hwnd_, message, wParam,
+      MAKELPARAM(x, y),
+      (DWORD) currentTime
+    };
+
+    browser_host->SendMouseMoveEvent((CefPlatformMouseEvent) &platform_event);
   }
 }
 
