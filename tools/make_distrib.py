@@ -942,19 +942,19 @@ if platform == 'windows':
 
   # Generate the cef_sandbox.lib merged library. A separate *_sandbox build
   # should exist when GN is_official_build=true.
-  if mode in ('standard', 'minimal', 'sandbox'):
-    dirs = {
-        'Debug': (build_dir_debug + '_sandbox', build_dir_debug),
-        'Release': (build_dir_release + '_sandbox', build_dir_release)
-    }
-    for dir_name in dirs.keys():
-      for src_dir in dirs[dir_name]:
-        if path_exists(os.path.join(src_dir, cef_sandbox_lib)):
-          dst_dir = os.path.join(output_dir, dir_name)
-          make_dir(dst_dir, options.quiet)
-          combine_libs(platform, src_dir, sandbox_libs,
-                       os.path.join(dst_dir, 'cef_sandbox.lib'))
-          break
+  #if mode in ('standard', 'minimal', 'sandbox'):
+  #  dirs = {
+  #      'Debug': (build_dir_debug + '_sandbox', build_dir_debug),
+  #      'Release': (build_dir_release + '_sandbox', build_dir_release)
+  #  }
+  #  for dir_name in dirs.keys():
+  #    for src_dir in dirs[dir_name]:
+  #      if path_exists(os.path.join(src_dir, cef_sandbox_lib)):
+  #        dst_dir = os.path.join(output_dir, dir_name)
+  #        make_dir(dst_dir, options.quiet)
+  #        combine_libs(platform, src_dir, sandbox_libs,
+  #                     os.path.join(dst_dir, 'cef_sandbox.lib'))
+  #        break
 
   valid_build_dir = None
 
